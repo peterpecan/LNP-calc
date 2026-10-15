@@ -5,10 +5,10 @@ import ExcelJS from 'exceljs';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import {PNG} from 'pngjs';
-import {sourceRecipe,calculate} from '../dist/calculator.js';
-import {createSession,updateStock,preparedRecord,validateSession,sameTargets} from '../dist/session.js';
-import {encodeSession,decodeSession,transferURL,isLoopback} from '../dist/transfer.js';
-import {buildWorkbook} from '../dist/excel.js';
+import {sourceRecipe,calculate} from '../src/calculator.js';
+import {createSession,updateStock,preparedRecord,validateSession,sameTargets} from '../src/session.js';
+import {encodeSession,decodeSession,transferURL,isLoopback} from '../src/transfer.js';
+import {buildWorkbook} from '../src/excel.js';
 const fixture=()=>structuredClone(sourceRecipe);
 test('lab stock edits keep composition, amount and phase targets and preserve original inputs',()=>{
   const s=createSession(fixture());s.checked=[0,1];s.preparedAt='2026-10-15T10:00:00.000Z';

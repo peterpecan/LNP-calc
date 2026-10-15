@@ -19,4 +19,3 @@ self.addEventListener('fetch',event=>{const req=event.request,url=new URL(req.ur
   await writeFile(new URL('sw.js',directory),worker);
   return version;
 }
-if(process.argv[1]?.endsWith('build-offline.mjs'))console.log('Offline cache version',await buildOffline(new URL('./dist/',import.meta.url)));

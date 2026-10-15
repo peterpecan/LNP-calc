@@ -1,20 +1,30 @@
-import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {cp,readFile,rm,writeFile} from 'node:fs/promises';
 import {buildOffline} from './build-offline.mjs';
 const target=new URL('../github-pages/',import.meta.url);
-await mkdir(target,{recursive:true});
-const files=['index.html','workspace.css','workflow.css','library.css','app.js','calculator.js','session.js','transfer.js','excel.js','lipid-library.js','stocks.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','vendor/lnp-vendor.js','vendor/QRCODE-LICENSE.txt','vendor/EXCELJS-LICENSE.txt','vendor/README.txt'];
 const example={name:'Example formulation',volume:1000,concentration:10,batches:1,excess:0,minimum:2,notes:'Illustrative inputs only. Enter the materials and stock values for your experiment.',lipids:[{name:'Example lipid A',role:'Example',ratio:70,stock:50,unit:'mM',mw:650},{name:'Example lipid B',role:'Example',ratio:30,stock:20,unit:'mM',mw:400}]};
-for(const name of files){
-  await mkdir(new URL(name.slice(0,name.lastIndexOf('/')+1),target),{recursive:true});
-  let content=await readFile(new URL('./dist/'+name,import.meta.url));
-  if(name==='calculator.js')content=Buffer.from(content.toString().replace(/\/\* LOCAL_WORKSHEET_START \*\/[\s\S]*?\/\* LOCAL_WORKSHEET_END \*\//,()=>`export const sourceRecipe = ${JSON.stringify(example)};`).replace(/\/\* LOCAL_STOCK_NOTE_START \*\/[\s\S]*?\/\* LOCAL_STOCK_NOTE_END \*\//,''));
-  if(name==='index.html')content=Buffer.from(content.toString().replace(/<a href="#review"[\s\S]*?<\/a>/,'').replace(/<main id="review-page"[\s\S]*?<\/main>/,'').replace('Based on your Excel template','Recipes stay in your browser').replace('Load worksheet recipe','Load example recipe').replace("This is the worksheet's volume-additivity model.",'Stock volumes use an additive-volume model.'));
-  await writeFile(new URL(name,target),content);
+// Fail the build instead of silently shipping local-only content when a marker or phrase changes.
+function replaceOrThrow(text,pattern,replacement,file){
+  const result=text.replace(pattern,replacement);
+  if(result===text)throw new Error(`build-pages: ${pattern} not found in ${file}`);
+  return result;
 }
-await writeFile(new URL('.nojekyll',target),'');
-await mkdir(new URL('.github/workflows/',target),{recursive:true});
-const workflow=['name: Deploy LNP calculator to Pages','on:','  push:','    branches: [main]','  workflow_dispatch:','permissions:','  contents: read','  pages: write','  id-token: write','concurrency:','  group: pages','  cancel-in-progress: false','jobs:','  deploy:','    environment:','      name: github-pages','      url: ${{ steps.deployment.outputs.page_url }}','    runs-on: ubuntu-latest','    steps:','      - uses: actions/checkout@v7.0.1','      - uses: actions/configure-pages@v6.0.0','      - uses: actions/upload-pages-artifact@v5.0.0','        with:',"          path: '.'",'      - name: Deploy','        id: deployment','        uses: actions/deploy-pages@v5.0.1',''].join('\n');
-await writeFile(new URL('.github/workflows/pages.yml',target),workflow);
-await writeFile(new URL('README.md',target),'# LNP calculator\n\nStatic formulation calculator with a supplier-referenced lipid library, mass/volume stock preparation, QR handoff, lab stock adjustment, Excel/CSV export, and offline caching.\n\nChoose a lipid to fill its molecular weight, then enter a stock in mg/mL or mM, or use From mass & volume. Use final solution volume: 100 mg / 4 mL = 25 mg/mL. Check the listed chemical form and supplier; PEG weights are averages and molecular weights remain editable for your product or lot. Custom library entries stay in this browser; selected references and preparation inputs travel with recipes and exports.\n\nUpload the contents of this directory to a GitHub repository. In Settings → Pages, choose GitHub Actions. The included workflow deploys pushes to main. You can also publish directly from the main branch root. All asset paths are relative, so repository project sites work.\n\nOnly generic example inputs are bundled. Recipe inputs stay in browser storage or QR links. Anyone holding a recipe QR/link can read it. No account, backend, analytics, or external QR service is used. Browser storage is device-specific; export JSON backups. Offline mode needs an initial successful online visit and cached assets. Storage may be cleared by the browser.\n');
+async function transform(name,edits){
+  const file=new URL(name,target);
+  let text=await readFile(file,'utf8');
+  for(const [pattern,replacement] of edits)text=replaceOrThrow(text,pattern,replacement,name);
+  await writeFile(file,text);
+}
+await rm(target,{recursive:true,force:true});
+await cp(new URL('./dist/',import.meta.url),target,{recursive:true});
+await transform('calculator.js',[
+  [/\/\* LOCAL_WORKSHEET_START \*\/[\s\S]*?\/\* LOCAL_WORKSHEET_END \*\//,()=>`export const sourceRecipe = ${JSON.stringify(example)};`],
+  [/\/\* LOCAL_STOCK_NOTE_START \*\/[\s\S]*?\/\* LOCAL_STOCK_NOTE_END \*\//,''],
+]);
+await transform('index.html',[
+  [/<a href="#review"[\s\S]*?<\/a>/,''],
+  [/<main id="review-page"[\s\S]*?<\/main>/,''],
+  ['Load worksheet recipe','Load example recipe'],
+  ["This is the worksheet's volume-additivity model.",'Stock volumes use an additive-volume model.'],
+]);
 const version=await buildOffline(target);
 console.log('Prepared github-pages/ with generic inputs only. Offline version '+version+'. Nothing uploaded.');

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {sourceRecipe,calculate,validateRecipeShape,toCSV} from '../dist/calculator.js';
+import {sourceRecipe,calculate,validateRecipeShape,toCSV} from '../src/calculator.js';
 const clone=()=>structuredClone(sourceRecipe);
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-8,`${a} differs from ${b}`);
 test('reproduces all five Excel aliquots and solvent balance',()=>{const r=calculate(clone());assert.deepEqual(r.errors,[]);[200.6549377167073,573.3944954128441,1147.342995169082,30.57576517812343,1.8382352941176472].forEach((v,i)=>close(r.rows[i].volume,v));close(r.ethanol,546.1935712291254);close(r.totalNmol,31250);close(r.stockVolume+r.ethanol,r.totalVolume);assert.equal(r.rows[4].massUg,null);assert.ok(r.warnings.some(w=>w.includes('DSPC')));});

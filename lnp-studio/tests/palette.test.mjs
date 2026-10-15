@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const files=['workspace.css','workflow.css','library.css'];
-const sheets=await Promise.all(files.map(f=>readFile(new URL('../dist/'+f,import.meta.url),'utf8')));
+const sheets=await Promise.all(files.map(f=>readFile(new URL('../src/'+f,import.meta.url),'utf8')));
 const definitions=new Map([...sheets.join('\n').matchAll(/(--[\w-]+)\s*:\s*([^;}]+)/g)].map(m=>[m[1],m[2].trim()]));
 test('theme colours are centralized in root tokens and every referenced token exists',()=>{
   sheets.forEach((sheet,i)=>{const body=sheet.replace(/:root\s*\{[^}]*\}/g,'');assert.ok(!/#[\da-f]{3,8}\b|\b(?:rgb|hsl)a?\(/i.test(body),files[i]+' has a colour outside :root');assert.ok(!/\b(?:box-shadow|text-shadow|backdrop-filter|linear-gradient|radial-gradient)\s*[:(]/.test(body));});

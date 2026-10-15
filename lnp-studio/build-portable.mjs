@@ -1,10 +1,30 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import {build} from 'esbuild';
-let html=await readFile('dist/index.html','utf8');
-const css=(await readFile('dist/workspace.css','utf8'))+'\n'+await readFile('dist/workflow.css','utf8')+'\n'+await readFile('dist/library.css','utf8');
-const vendor=await readFile('dist/vendor/lnp-vendor.js','utf8');
-const bundle=await build({entryPoints:['dist/app.js'],bundle:true,format:'iife',platform:'browser',write:false});
-const script=bundle.outputFiles[0].text;
-html=html.replace(/<link rel="(?:stylesheet|manifest|icon)"[^>]*>/g,'').replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g,'').replace('</head>',()=>`<style>${css}</style></head>`).replace('<body>','<body data-portable="true">').replace('</body>',()=>`<script>${vendor.replace(/<\/script/gi,'<\\/script')}</script><script>${script.replace(/<\/script/gi,'<\\/script')}</script></body>`);
-await writeFile('../LNP-calculator.html',html,'utf8');
+import { build } from 'esbuild';
+let html = await readFile('dist/index.html', 'utf8');
+const css =
+  (await readFile('dist/workspace.css', 'utf8')) +
+  '\n' +
+  (await readFile('dist/workflow.css', 'utf8')) +
+  '\n' +
+  (await readFile('dist/library.css', 'utf8'));
+const vendor = await readFile('dist/vendor/lnp-vendor.js', 'utf8');
+const bundle = await build({
+  entryPoints: ['dist/app.js'],
+  bundle: true,
+  format: 'iife',
+  platform: 'browser',
+  write: false,
+});
+const script = bundle.outputFiles[0].text;
+html = html
+  .replace(/<link rel="(?:stylesheet|manifest|icon)"[^>]*>/g, '')
+  .replace(/<script[^>]*src="[^"]+"[^>]*><\/script>/g, '')
+  .replace('</head>', () => `<style>${css}</style></head>`)
+  .replace('<body>', '<body data-portable="true">')
+  .replace(
+    '</body>',
+    () =>
+      `<script>${vendor.replace(/<\/script/gi, '<\\/script')}</script><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body>`,
+  );
+await writeFile('../LNP-calculator.html', html, 'utf8');
 console.log('Created standalone LNP-calculator.html (QR, lab mode, and Excel included).');

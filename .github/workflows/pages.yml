@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
         working-directory: lnp-studio
+      - name: Check formatting
+        run: npm run format:check
+        working-directory: lnp-studio
       - name: Build generic deployment app
         run: npm run build
         working-directory: lnp-studio

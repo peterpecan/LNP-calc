@@ -8,7 +8,7 @@ The folder `../github-pages/` is the deployment output. Its contents are also pa
 4. Once the deployment succeeds, open the generated HTTPS site URL on the office computer. In **Share to phone**, verify that the calculator website address is that hosted URL, including the repository path. Generate the QR again if you previously generated one on localhost.
 5. Open the site once on the phone and wait for **Available offline**. Use the browser's Add to Home Screen / Install option if desired. Keep a JSON backup of saved recipes and records; browser storage and caches can be cleared.
 
-The source repository keeps the deployment output in `github-pages/`. Its workflow is nested inside that folder, so it does not deploy automatically from the source repository. To deploy from this layout, configure a root-level Pages workflow to upload only `github-pages/`, or use a separate deployment repository containing that folder's contents. Do not deploy the source repository root: the local source and standalone file include the worksheet starter formulation.
+The source repository has a root-level `.github/workflows/pages.yml` workflow. It installs locked dependencies, rebuilds the app, runs the checks, and uploads only `github-pages/`. Select **GitHub Actions** as the repository's Pages publishing source. Pushes to `main` then redeploy automatically. The workflow inside the generated folder is a standalone alternative for a separate deployment repository. Do not deploy the source repository root: the local source and standalone file include the worksheet starter formulation.
 
 ## QR and privacy
 

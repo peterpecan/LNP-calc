@@ -1,0 +1,55 @@
+name: Deploy LNP calculator to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: lnp-studio/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+        working-directory: lnp-studio
+      - name: Build generic deployment app
+        run: npm run build
+        working-directory: lnp-studio
+      - name: Verify calculations and deployment contents
+        run: npm test
+        working-directory: lnp-studio
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: github-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v6.0.0
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5.0.1

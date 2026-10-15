@@ -1085,6 +1085,16 @@ async function generateQR() {
 $('#share-phone').addEventListener('click', openShare);
 $('#lab-share').addEventListener('click', openShare);
 $('#generate-qr').addEventListener('click', generateQR);
+// The system share sheet (email, messaging, AirDrop, Nearby Share…) where the browser offers one.
+$('#send-link').hidden = typeof navigator.share !== 'function';
+$('#send-link').addEventListener('click', async () => {
+  if (!currentShare) return;
+  try {
+    await navigator.share({ title: recipe.name || 'LNP recipe', url: currentShare.url });
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Could not open the share menu. Use Copy link instead.');
+  }
+});
 $('#copy-link').addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText($('#share-link').value);

@@ -1,11 +1,49 @@
 import { validateRecipeShape, calculate } from './calculator.js';
 import { createSession, validateSession } from './session.js';
+import { builtInReference } from './lipid-library.js';
 
 const MAX_TEXT = 32000,
   MAX_TOKEN = 44000;
+// Errors whose message is meant for the person opening the link.
+class TransferError extends Error {}
 const metadata = l => ({
   ...(l.reference ? { reference: l.reference } : {}),
   ...(l.stockPrep ? { stockPrep: l.stockPrep } : {}),
+});
+// Built-in library references travel as "id~checksum" and are rebuilt from the receiving app's
+// library; the checksum refuses links made with a different library version.
+const canonical = r =>
+  JSON.stringify(
+    Object.keys(r)
+      .sort()
+      .map(k => [k, r[k]]),
+  );
+function checksum(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+}
+function compactReference(r) {
+  const known = builtInReference(r.id);
+  return known && canonical(known) === canonical(r) ? r.id + '~' + checksum(canonical(r)) : r;
+}
+function expandReference(r) {
+  if (typeof r !== 'string') return r;
+  const [id, sum] = r.split('~'),
+    known = builtInReference(id);
+  if (!known || checksum(canonical(known)) !== sum)
+    throw new TransferError(
+      'This link was made with a different version of the lipid library. Reload the calculator on both devices so they match, then send it again.',
+    );
+  return known;
+}
+const packMetadata = l => ({
+  ...(l.reference ? { reference: compactReference(l.reference) } : {}),
+  ...(l.stockPrep ? { stockPrep: l.stockPrep } : {}),
+});
+const unpackMetadata = m => ({
+  ...(m.reference ? { reference: expandReference(m.reference) } : {}),
+  ...(m.stockPrep ? { stockPrep: m.stockPrep } : {}),
 });
 const pack = r => [
   r.name,
@@ -22,7 +60,7 @@ const pack = r => [
     l.unit === 'mg/mL' ? 1 : 0,
     l.mw,
     l.role || '',
-    metadata(l),
+    packMetadata(l),
   ]),
 ];
 function unpack(a) {
@@ -39,7 +77,7 @@ function unpack(a) {
     lipids: a[7].map(l => {
       if (!Array.isArray(l) || ![5, 6, 7].includes(l.length) || ![0, 1].includes(l[3]))
         throw new Error('Invalid lipid in transfer link.');
-      const m = l[6] || {};
+      const m = unpackMetadata(l[6] || {});
       return {
         name: l[0],
         ratio: l[1],
@@ -102,12 +140,12 @@ export async function encodeSession(session) {
         l.unit !== p.unit ||
         String(l.mw) !== String(p.mw) ||
         JSON.stringify(metadata(l)) !== JSON.stringify(metadata(p))
-        ? [i, l.stock, l.unit === 'mg/mL' ? 1 : 0, l.mw, metadata(l)]
+        ? [i, l.stock, l.unit === 'mg/mL' ? 1 : 0, l.mw, packMetadata(l)]
         : null;
     })
     .filter(Boolean);
   const payload = {
-    v: 1,
+    v: 2,
     i: session.id,
     t: session.plannedAt,
     p: pack(session.plan),
@@ -129,14 +167,15 @@ export async function decodeSession(token) {
     let bytes = unbase64(encoded);
     if (format === 'z1') {
       if (typeof DecompressionStream === 'undefined')
-        throw new Error(
+        throw new TransferError(
           'This browser cannot open compressed recipe links. Use an up-to-date browser.',
         );
       bytes = await transform(bytes, true);
     }
     if (bytes.length > MAX_TEXT) throw new Error();
     const p = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-    if (p.v !== 1 || !Array.isArray(p.w)) throw new Error();
+    // v1 links always carry full references; v2 may carry compact built-in ones.
+    if (![1, 2].includes(p.v) || !Array.isArray(p.w)) throw new Error();
     const recipe = unpack(p.p);
     if (!validateRecipeShape(recipe) || calculate(recipe).errors.length) throw new Error();
     const s = createSession(recipe, p.t);
@@ -163,7 +202,7 @@ export async function decodeSession(token) {
       if (change.length === 5) {
         delete row.reference;
         delete row.stockPrep;
-        const m = change[4] || {};
+        const m = unpackMetadata(change[4] || {});
         if (m.reference) row.reference = m.reference;
         if (m.stockPrep) row.stockPrep = m.stockPrep;
       }
@@ -172,7 +211,7 @@ export async function decodeSession(token) {
     if (!validateSession(s) || calculate(s.working).errors.length) throw new Error();
     return s;
   } catch (error) {
-    if (error.message.includes('This browser')) throw error;
+    if (error instanceof TransferError) throw error;
     throw new Error(
       'This recipe link is invalid, incomplete, or from an unsupported version. Your current work has been kept.',
     );

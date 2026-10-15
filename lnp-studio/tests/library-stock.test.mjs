@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import { writeFile, mkdir } from 'node:fs/promises';
+import { inflateSync } from 'node:zlib';
 import { lipidLibrary, searchLipids, selectLibraryLipid } from '../src/lipid-library.js';
 import {
   stockFromMass,
@@ -134,6 +135,53 @@ test('QR round trip retains supplier, overridden MW, and changed mass/volume det
   assert.deepEqual(roundtrip.working, s.working);
   assert.equal(roundtrip.working.lipids[0].stockPrep.massMg, 50);
   assert.equal(roundtrip.plan.lipids[0].stockPrep.massMg, 100);
+});
+const payloadOf = token => JSON.parse(inflateSync(Buffer.from(token.slice(3), 'base64url')));
+const tokenOf = payload => 'j1.' + Buffer.from(JSON.stringify(payload)).toString('base64url');
+const multiRecipe = ids => ({
+  ...baseRecipe(null),
+  lipids: ids.map(id => ({ ...stockRow(id), ratio: 20 })),
+});
+test('built-in library references travel compactly and expand to the full reference', async () => {
+  const s = createSession(multiRecipe(['mc3', 'dspc', 'cholesterol', 'dmg-peg2000']));
+  s.working.lipids[1] = applyStockPreparation(s.working.lipids[1], 50, 2);
+  const token = await encodeSession(s),
+    p = payloadOf(token);
+  assert.equal(p.v, 2);
+  assert.match(p.p[7][0][6].reference, /^mc3~[0-9a-z]+$/);
+  assert.match(p.w[0][4].reference, /^dspc~[0-9a-z]+$/);
+  const full = {
+    ...p,
+    p: [
+      ...p.p.slice(0, 7),
+      p.p[7].map((l, i) => [...l.slice(0, 6), { ...l[6], reference: s.plan.lipids[i].reference }]),
+    ],
+  };
+  assert.ok(token.length < tokenOf(full).length);
+  const roundtrip = await decodeSession(token);
+  assert.deepEqual(roundtrip.plan, s.plan);
+  assert.deepEqual(roundtrip.working, s.working);
+});
+test('custom and edited references travel in full', async () => {
+  const custom = selectLibraryLipid(
+    { ratio: 100 },
+    { id: 'custom-1', name: 'House lipid', category: 'Helper', mw: 512.3 },
+  );
+  const edited = stockRow('dspc');
+  edited.reference = { ...edited.reference, product: 'Lot-specific' };
+  for (const row of [applyStockPreparation(custom, 10, 1), edited]) {
+    const s = createSession(baseRecipe(row)),
+      token = await encodeSession(s);
+    assert.equal(typeof payloadOf(token).p[7][0][6].reference, 'object');
+    assert.deepEqual((await decodeSession(token)).plan, s.plan);
+  }
+});
+test('links from a different library version are refused with an explanation', async () => {
+  const p = payloadOf(await encodeSession(createSession(baseRecipe(stockRow('mc3')))));
+  for (const reference of ['mc3~0', 'no-such-lipid~abc']) {
+    p.p[7][0][6].reference = reference;
+    await assert.rejects(() => decodeSession(tokenOf(p)), /different version of the lipid library/);
+  }
 });
 test('legacy QR links with five-field lipid rows remain readable', async () => {
   const p = {

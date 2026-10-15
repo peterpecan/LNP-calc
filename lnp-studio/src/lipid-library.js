@@ -198,8 +198,8 @@ export function searchLipids(query = '', category = 'All', custom = []) {
       ),
   );
 }
-export function selectLibraryLipid(row, entry) {
-  const reference = {
+export function libraryReference(entry) {
+  return {
     id: entry.id,
     mw: entry.mw,
     source: entry.source || '',
@@ -209,6 +209,14 @@ export function selectLibraryLipid(row, entry) {
     average: Boolean(entry.average),
     checked: '2026-10-15',
   };
+}
+// The reference a built-in library entry produces in this app version, or null for unknown ids.
+export function builtInReference(id) {
+  const entry = lipidLibrary.find(l => l.id === id);
+  return entry ? libraryReference(entry) : null;
+}
+export function selectLibraryLipid(row, entry) {
+  const reference = libraryReference(entry);
   const { stockPrep, ...rest } = row;
   return {
     ...rest,

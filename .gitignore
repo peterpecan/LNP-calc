@@ -1,0 +1,13 @@
+node_modules/
+.openai/
+.local-git-backups/
+.env
+.env.*
+!.env.example
+*.zip
+*.tar
+*.tar.gz
+__pycache__/
+qa-*.png
+tests/output/
+lnp-studio/tests/output/

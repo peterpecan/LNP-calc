@@ -9,7 +9,7 @@ The root workflow `.github/workflows/pages.yml` installs locked dependencies, re
 
 ## QR and privacy
 
-QR generation and recipe compression run in the browser. The recipe is encoded in the URL fragment, after `#transfer=`. It is not sent in the HTTP request for the calculator. The QR/link is readable by anyone holding it; it is not encrypted. Avoid analytics or third-party scripts that could read fragments. The supplied app has none.
+QR generation and recipe compression run in the browser. The recipe is encoded in the URL fragment, after `#t=` (older links use `#transfer=` and still open). The QR stores the recipe in upper-case QR alphanumeric characters, which need fewer modules than the link text; both forms decode to the same session. It is not sent in the HTTP request for the calculator. The QR/link is readable by anyone holding it; it is not encrypted. Avoid analytics or third-party scripts that could read fragments. The supplied app has none.
 
 The initial transfer preserves the original plan and current stock inputs. Built-in library lipids travel as a short ID with a checksum and are rebuilt from the receiving app's library, so both devices need the same app version; a mismatch is refused with an explanation. Importing a QR transfer asks before replacing the current draft/session. Existing saved recipes and prepared records remain. Checkmarks stay on the current device. Phone edits do not synchronize back to the office computer. To bring changes back, use **Send…** to pass the link through the phone's share menu, generate a new QR/link, export the prepared record as JSON, or export Excel/CSV.
 

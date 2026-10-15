@@ -13,7 +13,14 @@ import {
   validateSession,
   sameTargets,
 } from '../src/session.js';
-import { encodeSession, decodeSession, transferURL, isLoopback } from '../src/transfer.js';
+import {
+  encodeSession,
+  decodeSession,
+  transferURL,
+  transferQRSegments,
+  transferToken,
+  isLoopback,
+} from '../src/transfer.js';
 import { buildWorkbook } from '../src/excel.js';
 const fixture = () => structuredClone(sourceRecipe);
 test('lab stock edits keep composition, amount and phase targets and preserve original inputs', () => {
@@ -85,20 +92,25 @@ test('URLs preserve GitHub repository path and place recipe only in fragment', (
   const u = new URL(transferURL('https://example.github.io/lnp/?old=1#lab', 'z1.ABCD'));
   assert.equal(u.pathname, '/lnp/');
   assert.equal(u.search, '');
-  assert.equal(u.hash, '#transfer=z1.ABCD');
+  assert.equal(u.hash, '#t=z1.ABCD');
   assert.equal(isLoopback('http://127.0.0.1:4173'), true);
   assert.equal(isLoopback(u.href), false);
 });
 test('generated QR PNG independently decodes to the exact transferable recipe', async () => {
   const s = createSession(fixture()),
-    url = transferURL('https://example.github.io/lnp/', await encodeSession(s));
-  assert.ok(url.length < 2200);
-  const bytes = await QRCode.toBuffer(url, { errorCorrectionLevel: 'M', width: 640, margin: 4 });
+    segments = transferQRSegments('https://example.github.io/lnp/', await encodeSession(s)),
+    url = segments.map(seg => seg.data).join('');
+  assert.ok(QRCode.create(segments, { errorCorrectionLevel: 'M' }).version <= 15);
+  const bytes = await QRCode.toBuffer(segments, {
+    errorCorrectionLevel: 'M',
+    width: 640,
+    margin: 4,
+  });
   const png = PNG.sync.read(bytes),
     decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
   assert.ok(decoded);
   assert.equal(decoded.data, url);
-  assert.equal((await decodeSession(new URL(decoded.data).hash.slice(10))).id, s.id);
+  assert.equal((await decodeSession(transferToken(new URL(decoded.data).hash.slice(1)))).id, s.id);
 });
 test('Excel file contains full-precision results, formulas, original plan and embedded QR', async () => {
   const s = updateStock(createSession(fixture()), 0, 'stock', 70),

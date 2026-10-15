@@ -8,7 +8,14 @@ import {
   updateStock,
   preparedRecord,
 } from './session.js';
-import { encodeSession, decodeSession, transferURL, isLoopback } from './transfer.js';
+import {
+  encodeSession,
+  decodeSession,
+  transferURL,
+  transferQRSegments,
+  transferToken,
+  isLoopback,
+} from './transfer.js';
 import { buildWorkbook } from './excel.js';
 import { lipidLibrary, searchLipids, selectLibraryLipid } from './lipid-library.js';
 import {
@@ -657,9 +664,10 @@ $('#import-file').addEventListener('change', async event => {
   }
 });
 function navigate() {
-  const target = location.hash.slice(1);
-  if (target.startsWith('transfer=')) {
-    receiveTransfer(target.slice(9));
+  const target = location.hash.slice(1),
+    token = transferToken(target);
+  if (token) {
+    receiveTransfer(token);
     return;
   }
   const page =
@@ -1024,14 +1032,20 @@ function shareBase() {
 }
 async function makeShare(base) {
   const token = await encodeSession(ensureSession());
-  const url = transferURL(base, token);
-  if (new TextEncoder().encode(url).length > 2200)
+  const url = transferURL(base, token),
+    segments = transferQRSegments(base, token);
+  if (!globalThis.LNPVendor?.QRCode)
+    throw new Error('QR library did not load. Reload the calculator.');
+  // Version 39 is about the densest QR a phone reads reliably from a screen or printout.
+  let version = Infinity;
+  try {
+    version = LNPVendor.QRCode.create(segments, { errorCorrectionLevel: 'M' }).version;
+  } catch {}
+  if (version > 39)
     throw new Error(
       'This recipe is too large for a reliable QR. Shorten the notes or use a JSON backup.',
     );
-  if (!globalThis.LNPVendor?.QRCode)
-    throw new Error('QR library did not load. Reload the calculator.');
-  const png = await LNPVendor.QRCode.toDataURL(url, {
+  const png = await LNPVendor.QRCode.toDataURL(segments, {
     errorCorrectionLevel: 'M',
     width: 640,
     margin: 4,

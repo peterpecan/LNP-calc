@@ -1070,7 +1070,7 @@ async function generateQR() {
     $('#share-code').hidden = false;
     $('#share-feedback').hidden = !share.loopback;
     $('#share-feedback').textContent = share.loopback
-      ? 'This address is localhost: a phone will try to open itself. Enter a reachable GitHub Pages or LAN address before scanning on a phone.'
+      ? "This is a localhost address, which won't open on a phone. Enter the GitHub Pages or LAN address."
       : '';
     if (share.loopback) $('#share-address').open = true;
   } catch (e) {
@@ -1130,7 +1130,7 @@ async function receiveTransfer(token) {
         : `Your current draft “${recipe.name}” will be saved to Saved recipes.`
       : session && comparableSession(session) === comparableSession(pendingTransfer)
         ? 'This matches the lab session already open on this device.'
-        : 'Your current work is already saved, so nothing will be lost.';
+        : 'Your current work is already saved.';
     if (!$('#receive-dialog').open) $('#receive-dialog').showModal();
   } catch (e) {
     toast(e.message);
@@ -1163,7 +1163,7 @@ $('#accept-transfer').addEventListener('click', () => {
   renderForm();
   renderLab();
   navigate();
-  toast(['Recipe opened in Lab mode.', setAsideNote(parked.entry)].filter(Boolean).join(' '));
+  toast(['Recipe opened in Lab session.', setAsideNote(parked.entry)].filter(Boolean).join(' '));
 });
 async function exportExcel() {
   const btns = ['#export-excel', '#lab-excel'];
@@ -1171,7 +1171,7 @@ async function exportExcel() {
   try {
     const s = ensureSession();
     let share = null,
-      qrNote = 'Set a website address to include a QR.';
+      qrNote = 'Set the website address in Settings to include a QR.';
     if (shareBase()) {
       try {
         share = await makeShare(shareBase());
@@ -1199,8 +1199,7 @@ async function printRecipe() {
     $('#print-session').textContent =
       `${recipe.name} · Ref ${s.id.slice(0, 8)} · Planned ${new Date(s.plannedAt).toLocaleString()}`;
     $('#print-qr').hidden = true;
-    $('#print-qr-note').textContent =
-      'Set the calculator website address in Send to phone to include a QR.';
+    $('#print-qr-note').textContent = 'Set the website address in Settings to include a QR.';
     if (shareBase()) {
       try {
         const share = await makeShare(shareBase());
@@ -1208,7 +1207,7 @@ async function printRecipe() {
         await $('#print-qr').decode();
         $('#print-qr').hidden = false;
         $('#print-qr-note').textContent = share.loopback
-          ? 'Localhost QR: enter a phone-reachable website address in Send to phone for use in the lab.'
+          ? 'Localhost QR: set the GitHub Pages or LAN address in Settings for use on a phone.'
           : 'The QR includes the original plan and current stock inputs.';
       } catch (e) {
         $('#print-qr-note').textContent = 'QR omitted: ' + e.message;

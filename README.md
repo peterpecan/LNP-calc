@@ -1,6 +1,6 @@
 # LNP calculator
 
-A browser-based calculator for lipid nanoparticle formulations, with a supplier-referenced lipid library, mass-based stock inputs, an adjustable lab session, QR handoff, Excel/CSV export, and offline use.
+Browser-based calculator for lipid nanoparticle formulations. Works offline; data stays in the browser.
 
 Download the standalone **LNP-calculator.html** from the latest Pages workflow run (artifact `LNP-calculator-standalone`), build it locally with `npm run build`, or run the local preview:
 

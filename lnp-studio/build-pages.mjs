@@ -46,8 +46,4 @@ await transform('index.html', [
   ],
 ]);
 const version = await buildOffline(target);
-console.log(
-  'Prepared github-pages/ with generic inputs only. Offline version ' +
-    version +
-    '. Nothing uploaded.',
-);
+console.log('Prepared github-pages/ with generic inputs only. Offline version ' + version + '.');

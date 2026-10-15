@@ -3,7 +3,7 @@
 The root workflow `.github/workflows/pages.yml` installs locked dependencies, rebuilds the app, runs the checks, and deploys only the generated `github-pages/` folder. That folder contains generic illustrative inputs, static assets, a service worker and installable-app metadata. The worksheet review, local default formulation, browser storage, and development source files are excluded. Each run also uploads the standalone `LNP-calculator.html` as the `LNP-calculator-standalone` artifact.
 
 1. In repository Settings → Pages, select **GitHub Actions** as the source. Pushes to `main` then build, test and redeploy automatically.
-2. Once the deployment succeeds, open the generated HTTPS site URL on the office computer. In **Share / export → Send to phone (QR)**, verify that the calculator website address is that hosted URL, including the repository path. Generate the QR again if you previously generated one on localhost.
+2. Once the deployment succeeds, open the generated HTTPS site URL on the office computer. In **Settings** (gear icon), set the calculator website address to the hosted URL, including the repository path. Generate the QR again if you previously generated one on localhost.
 3. Open the site once on the phone and wait for **Available offline**. Use the browser's Add to Home Screen / Install option if desired. Keep a JSON backup of saved recipes and records; browser storage and caches can be cleared.
 
 
@@ -17,7 +17,7 @@ The initial transfer preserves the original plan and current stock inputs. Built
 
 `127.0.0.1` and `localhost` always refer to the device opening the link. A QR pointing there cannot reach the office computer from a phone.
 
-For a same-network test, stop the default server and run `node preview-server.mjs --lan`, then use the computer's LAN IPv4 address with port 4173 in the QR address field. The computer and phone must share a network that permits device-to-device communication, and the local firewall must allow that server. LAN HTTP does not provide installable offline caching; use the HTTPS Pages site for that workflow. The normal preview stays bound to loopback and does not enable LAN access automatically.
+For a same-network test, stop the default server and run `node preview-server.mjs --lan`, then use the computer's LAN IPv4 address with port 4173 as the website address in Settings. The computer and phone must share a network that permits device-to-device communication, and the local firewall must allow that server. LAN HTTP does not provide installable offline caching; use the HTTPS Pages site for that workflow. The normal preview stays bound to loopback and does not enable LAN access automatically.
 
 ## Development
 

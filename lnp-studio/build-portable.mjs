@@ -27,4 +27,4 @@ html = html
       `<script>${vendor.replace(/<\/script/gi, '<\\/script')}</script><script>${script.replace(/<\/script/gi, '<\\/script')}</script></body>`,
   );
 await writeFile('../LNP-calculator.html', html, 'utf8');
-console.log('Created standalone LNP-calculator.html (QR, lab mode, and Excel included).');
+console.log('Created standalone LNP-calculator.html (QR, lab session, and Excel included).');

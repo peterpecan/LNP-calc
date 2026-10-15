@@ -84,7 +84,7 @@ export function calculate(recipe) {
     ethanol = totalVolume - stockVolume;
   if (Number.isFinite(ethanol) && ethanol < -Math.max(1e-9, totalVolume * 1e-12))
     errors.push(
-      'Stock volumes exceed the lipid phase volume. Increase the phase volume relative to lipid amount by lowering total lipid concentration, or use more concentrated stocks.',
+      'Stock volumes exceed the lipid phase volume. Lower the total lipid concentration or use more concentrated stocks.',
     );
   if ([scale, totalVolume, totalNmol, stockVolume].some(v => !Number.isFinite(v))) {
     if (!errors.length) errors.push('These inputs exceed the supported numeric range.');

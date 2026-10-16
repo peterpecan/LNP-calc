@@ -326,11 +326,24 @@ function setAsideNote(entry) {
       : `Your previous draft was saved as “${entry.recipe.name}”.`
     : '';
 }
-function toast(message) {
-  $('#toast').textContent = message;
-  $('#toast').hidden = false;
+// Destructive actions run immediately and offer Undo here instead of a native confirm(),
+// which browsers let users silence — after which confirm() always returns false.
+function toast(message, undo) {
+  const el = $('#toast');
+  el.textContent = message;
+  if (undo) {
+    const button = document.createElement('button');
+    button.className = 'toast-action';
+    button.textContent = 'Undo';
+    button.addEventListener('click', () => {
+      el.hidden = true;
+      undo();
+    });
+    el.append(' ', button);
+  }
+  el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => ($('#toast').hidden = true), 4500);
+  toastTimer = setTimeout(() => (el.hidden = true), undo ? 8000 : 4500);
 }
 function syncStorageCaption() {
   const banner = $('#storage-status'),
@@ -718,13 +731,18 @@ $('#saved-list').addEventListener('click', event => {
     );
   }
   if (el.dataset.deleteRecipe !== undefined) {
-    const index = Number(el.dataset.deleteRecipe);
-    if (!confirm(`Delete “${saved[index].recipe.name}” from this browser?`)) return;
+    const index = Number(el.dataset.deleteRecipe),
+      before = saved;
     const next = saved.filter((_, i) => i !== index);
     if (write('lnp-studio-recipes-v1', next)) {
       saved = next;
       renderSaved();
-      toast('Recipe deleted.');
+      toast(`Deleted “${before[index].recipe.name}”.`, () => {
+        if (write('lnp-studio-recipes-v1', before)) {
+          saved = before;
+          renderSaved();
+        }
+      });
     }
   }
 });
@@ -1107,21 +1125,27 @@ $('#lab-notes').addEventListener('input', event => {
   update();
 });
 $('#restore-stocks').addEventListener('click', () => {
-  if (
-    !session ||
-    !confirm(
-      'Restore all planned stock concentrations and molecular weights? Current pipetting checks will clear.',
-    )
-  )
-    return;
-  session.working.lipids = copy(session.plan.lipids);
-  session.checked = [];
-  session.preparedAt = null;
-  recipe = copy(session.working);
-  saveSession();
-  invalidateShare();
-  renderForm();
-  renderLab();
+  if (!session) return;
+  const target = session,
+    before = {
+      lipids: session.working.lipids,
+      checked: session.checked,
+      preparedAt: session.preparedAt,
+    };
+  const apply = state => {
+    session.working.lipids = state.lipids;
+    session.checked = state.checked;
+    session.preparedAt = state.preparedAt;
+    recipe = copy(session.working);
+    saveSession();
+    invalidateShare();
+    renderForm();
+    renderLab();
+  };
+  apply({ lipids: copy(session.plan.lipids), checked: [], preparedAt: null });
+  toast('Planned stocks restored. Pipetting checks cleared.', () => {
+    if (session === target) apply(before);
+  });
 });
 $('#save-prepared').addEventListener('click', () => {
   try {

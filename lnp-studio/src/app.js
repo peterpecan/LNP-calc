@@ -118,15 +118,37 @@ function referenceHTML(l) {
     source = safeSource(r.source);
   return `${overridden ? '<strong>MW overridden</strong>' : r.average ? '<strong>Average MW</strong>' : '<strong>Library MW</strong>'} · ${source ? `<a href="${escape(source)}" target="_blank" rel="noopener noreferrer">${escape(r.supplier)} ${escape(r.product)}</a>` : escape(r.supplier)}<span class="ref-form">${escape(r.form || '')}${overridden ? ' · Reference ' + escape(r.mw) + ' g/mol' : ''}</span>`;
 }
+// One-line source hint under the calculator's MW field; the full reference is in the tooltip.
+function referenceShortHTML(l) {
+  if (!l.reference) return '';
+  const r = l.reference,
+    overridden = l.mw !== '' && Math.abs(Number(l.mw) - r.mw) > 1e-8,
+    source = safeSource(r.source),
+    tip = [
+      overridden ? 'MW overridden' : r.average ? 'Average MW' : 'Library MW',
+      `${r.supplier} ${r.product}`,
+      r.form,
+      overridden ? `Reference ${r.mw} g/mol` : '',
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    label = overridden
+      ? `<strong>Library ${escape(r.mw)}</strong>`
+      : `${r.average ? 'Avg. · ' : ''}${escape(String(r.supplier).split(' ')[0])} ${escape(r.product)}`;
+  return source
+    ? `<a href="${escape(source)}" target="_blank" rel="noopener noreferrer" title="${escape(tip)}">${label}</a>`
+    : `<span title="${escape(tip)}">${label}</span>`;
+}
 function equivalentText(l) {
   try {
     const value =
       l.unit === 'mg/mL'
         ? (Number(l.stock) * 1000) / Number(l.mw)
         : (Number(l.stock) * Number(l.mw)) / 1000;
-    if (l.stock === '' || !(Number(l.mw) > 0) || !Number.isFinite(value))
-      return 'Enter stock and MW to convert';
-    return `= ${fmt(value, 3)} ${l.unit === 'mg/mL' ? 'mM' : 'mg/mL'}`;
+    if (l.stock === '') return '';
+    if (!(Number(l.mw) > 0) || !Number.isFinite(value)) return 'Add MW to convert';
+    const digits = value > 0 ? Math.min(4, Math.max(0, 2 - Math.floor(Math.log10(value)))) : 0;
+    return `≈ ${fmt(value, digits)} ${l.unit === 'mg/mL' ? 'mM' : 'mg/mL'}`;
   } catch {
     return '';
   }
@@ -138,7 +160,7 @@ function unitOptions(unit) {
   );
 }
 function prepText(l) {
-  return l.stockPrep ? `${l.stockPrep.massMg} mg in ${l.stockPrep.volumeMl} mL · edit` : '';
+  return l.stockPrep ? `${l.stockPrep.massMg} mg / ${l.stockPrep.volumeMl} mL · edit` : '';
 }
 // Attach calculator messages to the lipid row they describe; anything else stays general.
 function rowIssues(r, lipids) {
@@ -325,7 +347,7 @@ function renderForm() {
   $('#lipid-rows').innerHTML = recipe.lipids
     .map(
       (l, i) =>
-        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false"></div><div class="mw-reference" id="mw-reference-${i}"></div></td><td data-label="Molar parts"><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td data-label="Stock conc."><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></td><td data-label="MW (g/mol)"><input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol"></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
+        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false" placeholder="Search library or type a name"></div></td><td><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><div class="cell-hint"><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></div></td><td><input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol"><div class="cell-hint mw-source" id="mw-reference-${i}"></div></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
     )
     .join('');
   update();
@@ -340,7 +362,7 @@ function update() {
       prep.textContent = prepText(l);
       prep.hidden = !l.stockPrep;
     }
-    if ($(`#mw-reference-${i}`)) $(`#mw-reference-${i}`).innerHTML = referenceHTML(l);
+    if ($(`#mw-reference-${i}`)) $(`#mw-reference-${i}`).innerHTML = referenceShortHTML(l);
   });
   const set = (id, value) => ($(id).textContent = value);
   set(

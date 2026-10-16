@@ -1,6 +1,6 @@
 # GitHub Pages deployment
 
-The root workflow `.github/workflows/pages.yml` installs locked dependencies, rebuilds the app, runs the checks, and deploys only the generated `github-pages/` folder. That folder contains generic illustrative inputs, static assets, a service worker and installable-app metadata. The worksheet review, local default formulation, browser storage, and development source files are excluded. Each run also uploads the standalone `LNP-calculator.html` as the `LNP-calculator-standalone` artifact.
+The root workflow `.github/workflows/pages.yml` installs locked dependencies, rebuilds the app, runs the checks, and deploys only the generated `github-pages/` folder. That folder contains the app, static assets, a service worker and installable-app metadata. Browser storage and development source files are excluded. Each run also uploads the standalone `LNP-calculator.html` as the `LNP-calculator-standalone` artifact.
 
 1. In repository Settings → Pages, select **GitHub Actions** as the source. Pushes to `main` then build, test and redeploy automatically.
 2. Once the deployment succeeds, open the generated HTTPS site URL on the office computer. In **Settings** (gear icon), set the calculator website address to the hosted URL, including the repository path. Generate the QR again if you previously generated one on localhost.
@@ -21,6 +21,6 @@ For a same-network test, stop the default server and run `node preview-server.mj
 
 ## Development
 
-Run `npm ci` (Node.js 18+), `npm run build`, and `npm test` from `lnp-studio`. `npm start` serves the local worksheet-based calculator from `src/` at `/`, the standalone file at `/portable`, and the generic deployment build at `/pages/` to exercise a repository subpath.
+Run `npm ci` (Node.js 18+), `npm run build`, and `npm test` from `lnp-studio`. `npm start` serves the calculator from `src/` at `/`, the standalone file at `/portable`, and the generic deployment build at `/pages/` to exercise a repository subpath.
 
 The project locks its browser dependencies and bundles them locally. The uuid override fixes a transitive advisory while retaining the Excel library's required API. Re-run build and tests after dependency changes.

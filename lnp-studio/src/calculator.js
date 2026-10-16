@@ -5,7 +5,7 @@ export const defaultBatch = {
   volume: 1000,
   concentration: 10,
   batches: 1,
-  excess: 0,
+  excess: 20,
   minimum: 0.5,
   notes: '',
 };

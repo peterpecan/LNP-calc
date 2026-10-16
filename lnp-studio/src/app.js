@@ -83,8 +83,7 @@ let result,
 // but the value on this device always replaces it in the working recipe and session.
 const validMinimum = v => v !== '' && v !== null && Number(v) >= 0 && Number.isFinite(Number(v));
 let settings = read('lnp-studio-settings-v1', null);
-if (!settings || !validMinimum(settings.minimum))
-  settings = { minimum: defaultBatch.minimum };
+if (!settings || !validMinimum(settings.minimum)) settings = { minimum: defaultBatch.minimum };
 function applySettings() {
   if (String(recipe.minimum) !== String(settings.minimum)) recipe.minimum = settings.minimum;
   if (
@@ -218,11 +217,7 @@ function rowIssues(r, lipids) {
           if (row.massUg === null && Number(row.ratio) > 0)
             rows[i].push({ type: 'warn', text: 'Mass needs a molecular weight for this product.' });
         });
-      else if (w.startsWith('Worksheet DSPC')) {
-        const i = r.rows.findIndex(row => row.name.trim().toLowerCase() === 'dspc');
-        if (i >= 0) rows[i].push({ type: 'warn', text: w });
-        else general.push({ type: 'warn', text: w });
-      } else add(w, 'warn');
+      else add(w, 'warn');
     });
   return { rows, general };
 }
@@ -586,7 +581,8 @@ $('#template-list').insertAdjacentHTML(
     )
     .join(''),
 );
-// Keeps the batch setup; replaces the name, notes and lipids. Current work is parked first.
+// Keeps the batch size; resets the overage and replaces the name, notes and lipids.
+// Current work is parked first.
 $('#template-list').addEventListener('click', event => {
   const id = event.target.closest('[data-template]')?.dataset.template;
   if (!id) return;
@@ -598,6 +594,7 @@ $('#template-list').addEventListener('click', event => {
     ...clone(recipe),
     name: '',
     notes: '',
+    excess: defaultBatch.excess,
     lipids: template ? templateLipids(template) : blankSlots(),
   };
   renderForm();
@@ -796,7 +793,7 @@ function navigate() {
     return;
   }
   const page =
-    ['calculator', 'lab', 'recipes', 'review', 'method'].includes(target) &&
+    ['calculator', 'lab', 'recipes', 'method'].includes(target) &&
     document.getElementById(target + '-page')
       ? target
       : 'calculator';
@@ -810,7 +807,6 @@ function navigate() {
     calculator: 'Calculator',
     lab: 'Lab session',
     recipes: 'Saved recipes',
-    review: 'Worksheet review',
     method: 'Methods & references',
   }[page];
   document.body.dataset.view = page;

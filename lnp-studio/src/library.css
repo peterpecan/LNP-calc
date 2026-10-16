@@ -11,3 +11,4 @@
 .heading-tools{display:flex;align-items:baseline;gap:14px}.heading-tools .text-button{margin:0;white-space:nowrap}
 .template-menu .menu-list{left:auto;right:0;min-width:250px}.template-menu .menu-button{margin:0}.template-menu .menu-list button small{display:block;color:var(--muted);font-size:12px}
 .blank-row-button{margin:0 0 8px}
+.details-card .detail-fields{grid-template-columns:1fr}.details-card textarea{min-height:88px}

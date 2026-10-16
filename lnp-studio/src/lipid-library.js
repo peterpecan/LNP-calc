@@ -1,4 +1,5 @@
-// Supplier formula weights, checked 2026-10-15. PEG values are averages.
+// Supplier formula weights, checked 2026-10-15; entries carrying their own `checked` date
+// were added later. PEG values are averages.
 // Values are copied into recipes so catalogue updates cannot alter saved work.
 export const lipidLibrary = [
   {
@@ -35,9 +36,33 @@ export const lipidLibrary = [
     source: 'https://www.caymanchem.com/product/34337/alc-0315',
   },
   {
+    id: '5a2-sc8',
+    name: '5A2-SC8',
+    aliases: '5A2SC8 dendrimer lipidoid SORT',
+    category: 'Ionizable',
+    mw: 1841.715,
+    form: 'Free base; CAS 1857341-90-2',
+    supplier: 'TargetMol',
+    product: 'T74450',
+    checked: '2026-10-16',
+    source: 'https://www.targetmol.com/compound/5a2-sc8',
+  },
+  {
+    id: 'c12-200',
+    name: 'C12-200',
+    aliases: 'C12200 lipidoid SORT',
+    category: 'Ionizable',
+    mw: 1136.9,
+    form: 'Free base; weight from the listed formula C70H145N5O5',
+    supplier: 'Cayman Chemical',
+    product: '36699',
+    checked: '2026-10-16',
+    source: 'https://www.caymanchem.com/product/36699/c12-200',
+  },
+  {
     id: 'dodap',
     name: 'DODAP',
-    aliases: '18:1 DAP',
+    aliases: '18:1 DAP SORT',
     category: 'Ionizable',
     mw: 648.054,
     form: 'No counterion in listed formula',
@@ -48,7 +73,7 @@ export const lipidLibrary = [
   {
     id: 'dspc',
     name: 'DSPC',
-    aliases: '18:0 PC distearoyl phosphatidylcholine',
+    aliases: '18:0 PC distearoyl phosphatidylcholine SORT',
     category: 'Helper',
     mw: 790.145,
     form: '18:0/18:0 PC',
@@ -70,7 +95,7 @@ export const lipidLibrary = [
   {
     id: 'dope',
     name: 'DOPE',
-    aliases: '18:1 PE dioleoyl phosphatidylethanolamine',
+    aliases: '18:1 PE dioleoyl phosphatidylethanolamine SORT',
     category: 'Helper',
     mw: 744.034,
     form: '18:1/18:1 PE',
@@ -90,6 +115,18 @@ export const lipidLibrary = [
     source: 'https://www.avantiresearch.com/en-gb/products/product/850355-160-pc-dppc',
   },
   {
+    id: 'docpe',
+    name: 'DOCPe',
+    aliases: 'inverted headgroup zwitterionic SORT',
+    category: 'Helper',
+    mw: 800.14,
+    form: 'Zwitterionic; inverted headgroup',
+    supplier: 'Avanti Research',
+    product: '850312',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/850312-docpe',
+  },
+  {
     id: 'cholesterol',
     name: 'Cholesterol',
     aliases: 'Chol',
@@ -103,13 +140,73 @@ export const lipidLibrary = [
   {
     id: 'dotap-cl',
     name: 'DOTAP (chloride)',
-    aliases: 'DOTAP 18:1 TAP',
+    aliases: 'DOTAP 18:1 TAP SORT',
     category: 'Cationic',
     mw: 698.542,
     form: 'Chloride salt; includes counterion',
     supplier: 'Avanti Research',
     product: '890890',
     source: 'https://www.avantiresearch.com/en-gb/products/product/890890-181-tap-dotap',
+  },
+  {
+    id: 'ddab-br',
+    name: 'DDAB (bromide)',
+    aliases: '18:0 DDAB dimethyldioctadecylammonium SORT',
+    category: 'Cationic',
+    mw: 630.952,
+    form: 'Bromide salt; includes counterion',
+    supplier: 'Avanti Research',
+    product: '890810',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/890810-180-ddab',
+  },
+  {
+    id: 'epc14-cl',
+    name: '14:0 EPC (chloride)',
+    aliases: 'EPC ethylphosphocholine dimyristoyl SORT',
+    category: 'Cationic',
+    mw: 742.447,
+    form: 'Chloride salt; includes counterion',
+    supplier: 'Avanti Research',
+    product: '890701',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/890701-140-epc-cl-salt',
+  },
+  {
+    id: '18pa-na',
+    name: '18:1 PA / DOPA (sodium)',
+    aliases: '18PA DOPA dioleoyl phosphatidic acid phosphate SORT',
+    category: 'Anionic',
+    mw: 722.948,
+    form: 'Sodium salt; includes counterion',
+    supplier: 'Avanti Research',
+    product: '840875',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/840875-181-pa',
+  },
+  {
+    id: '14pa-na',
+    name: '14:0 PA / DMPA (sodium)',
+    aliases: '14PA DMPA dimyristoyl phosphatidic acid phosphate SORT',
+    category: 'Anionic',
+    mw: 614.767,
+    form: 'Sodium salt; includes counterion',
+    supplier: 'Avanti Research',
+    product: '830845',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/830845-140-pa',
+  },
+  {
+    id: '18bmp-sr-nh4',
+    name: '18:1 Hemi BMP (S,R) (ammonium)',
+    aliases: '18BMP bis monooleoylglycero phosphate hemi BMP SORT',
+    category: 'Anionic',
+    mw: 1056.52,
+    form: 'Ammonium salt; (S,R) isomer',
+    supplier: 'Avanti Research',
+    product: '857134',
+    checked: '2026-10-16',
+    source: 'https://www.avantiresearch.com/en-gb/products/product/857134-181-hemi-bmp-sr',
   },
   {
     id: 'dmg-peg2000',
@@ -231,6 +328,54 @@ export const recipeTemplates = [
       ['alc0159-cayman', 1.6],
     ],
   },
+  // Selective ORgan Targeting, Cheng et al., Nat. Nanotechnol. 15:313-320 (2020).
+  // A fifth "SORT lipid" is added at Y mol% of total lipids on top of the base
+  // 5A2-SC8/DOPE/cholesterol/DMG-PEG2000 = 15/15/30/3 (Methods, "Nanoparticle formation";
+  // "Y means the molar percent of DOTAP in total lipids"). The base sums to 63 parts, so
+  // each base part is scaled by (100 - Y)/63 and the SORT lipid enters as Y.
+  // The paper prints the liver ratio in full as 19.05/19.05/38.1/3.81/20 (Methods),
+  // which is this scaling at Y = 20 and fixes the convention for the other two.
+  {
+    // Y = 50: 15 x 50/63 = 11.90, 30 x 50/63 = 23.81, 3 x 50/63 = 2.38.
+    // "50% was optimal for lung delivery" (Results, Fig. 1c).
+    id: 'sort-lung',
+    label: 'SORT lung (50% DOTAP)',
+    ratio: '11.9 : 11.9 : 23.81 : 2.38 : 50',
+    lipids: [
+      ['5a2-sc8', 11.9],
+      ['dope', 11.9],
+      ['cholesterol', 23.81],
+      ['dmg-peg2000', 2.38],
+      ['dotap-cl', 50],
+    ],
+  },
+  {
+    // Y = 30: 15 x 70/63 = 16.67, 30 x 70/63 = 33.33, 3 x 70/63 = 3.33.
+    // "Spleen SORT LNPs (30% 18-PA)" (Fig. 3c legend; Methods).
+    id: 'sort-spleen',
+    label: 'SORT spleen (30% 18PA)',
+    ratio: '16.67 : 16.67 : 33.33 : 3.33 : 30',
+    lipids: [
+      ['5a2-sc8', 16.67],
+      ['dope', 16.67],
+      ['cholesterol', 33.33],
+      ['dmg-peg2000', 3.33],
+      ['18pa-na', 30],
+    ],
+  },
+  {
+    // Y = 20, printed in the Methods as 19.05/19.05/38.1/3.81/20.
+    id: 'sort-liver',
+    label: 'SORT liver (20% DODAP)',
+    ratio: '19.05 : 19.05 : 38.1 : 3.81 : 20',
+    lipids: [
+      ['5a2-sc8', 19.05],
+      ['dope', 19.05],
+      ['cholesterol', 38.1],
+      ['dmg-peg2000', 3.81],
+      ['dodap', 20],
+    ],
+  },
 ];
 export const slotRoles = ['Ionizable', 'Helper', 'Sterol', 'PEG'];
 // One empty row per lipid type; the role picks which library entries the name field suggests.
@@ -255,8 +400,22 @@ const shortNames = {
   'dspe-mpeg2000-nh4': 'DSPE-PEG',
   'dspe-peg2000-mal-nh4': 'DSPE-PEG-MAL',
   'dspe-peg2000-amine-nh4': 'DSPE-PEG-NH2',
+  'ddab-br': 'DDAB',
+  'epc14-cl': 'EPC',
+  '18pa-na': '18PA',
+  '14pa-na': '14PA',
+  '18bmp-sr-nh4': '18BMP',
 };
-const roleRank = { Ionizable: 0, Cationic: 0, Helper: 1, Phospholipid: 1, Sterol: 2, PEG: 3 };
+// Anionic SORT lipids sit at the default rank, so they trail the four base components.
+const roleRank = {
+  Ionizable: 0,
+  Cationic: 0,
+  Helper: 1,
+  Phospholipid: 1,
+  Sterol: 2,
+  PEG: 3,
+  Anionic: 4,
+};
 // "MC3/DSPC/Chol/DMG-PEG": lipids in conventional role order, recipe order within a role.
 export function recipeShorthand(lipids) {
   const rank = l => roleRank[String(l.role).replace(/ lipid$/, '')] ?? 4;
@@ -302,7 +461,7 @@ export function libraryReference(entry) {
     product: entry.product || '',
     form: entry.form || '',
     average: Boolean(entry.average),
-    checked: '2026-10-15',
+    checked: entry.checked || '2026-10-15',
   };
 }
 // The reference a built-in library entry produces in this app version, or null for unknown ids.

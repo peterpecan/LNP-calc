@@ -12,3 +12,4 @@
 .template-menu .menu-list{left:auto;right:0;min-width:250px}.template-menu .menu-button{margin:0}.template-menu .menu-list button small{display:block;color:var(--muted);font-size:12px}
 .blank-row-button{margin:0 0 8px}
 .details-card .detail-fields{grid-template-columns:1fr}.details-card textarea{min-height:88px}
+.results-column .save-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:16px}.results-column .save-strip .button-group{display:contents}.results-column .save-strip #save-recipe{grid-column:1/-1;order:1}.results-column .save-strip p{grid-column:1/-1;order:2;max-width:none;text-align:center}

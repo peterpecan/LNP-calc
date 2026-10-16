@@ -491,6 +491,7 @@ function update() {
     '#start-lab',
     '#mobile-start-lab',
     '#share-phone',
+    '#send-phone',
     '#calculator-page .menu-button:not(.template-button)',
   ].forEach(id => ($(id).disabled = !valid));
   refreshLabResults();
@@ -1218,6 +1219,7 @@ async function generateQR() {
   }
 }
 $('#share-phone').addEventListener('click', openShare);
+$('#send-phone').addEventListener('click', openShare);
 $('#lab-share').addEventListener('click', openShare);
 $('#generate-qr').addEventListener('click', generateQR);
 // The system share sheet (email, messaging, AirDrop, Nearby Share…) where the browser offers one.

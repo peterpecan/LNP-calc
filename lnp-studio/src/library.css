@@ -10,7 +10,15 @@
 @media print{.mw-edit,.mw-reset{display:none!important}}
 .heading-tools{display:flex;align-items:baseline;gap:14px}.heading-tools .text-button{margin:0;white-space:nowrap}
 /* Name first so a formulation is recognised at a glance; composition and parts sit under it. */
-.template-menu .menu-list{left:auto;right:0;min-width:290px;max-height:min(60vh,460px);gap:6px;overflow-y:auto}.template-menu .menu-button{margin:0}.template-menu .menu-list button{padding:8px 10px;line-height:1.4}.template-menu .menu-list button strong{display:block;margin-bottom:1px;font-weight:600}.template-menu .menu-list button small{display:block;color:var(--muted);font-size:12px}
+/* No gap between entries: the three lines of one entry sit tight and the padding
+   around them is the only whitespace, so a hover band reads as exactly one template. */
+.template-menu .menu-list{left:auto;right:0;min-width:306px;max-height:min(60vh,460px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.template-menu .menu-button{margin:0}
+.template-menu .menu-list button{min-height:0;padding:9px 11px;line-height:1.35}
+.template-menu .menu-list button:hover,.template-menu .menu-list button:focus-visible{background:var(--select-bg)}
+.template-menu .menu-list button strong{display:block;font-weight:600}
+.template-menu .menu-list button small{display:block;color:var(--muted);font-size:12px}
+.template-menu .menu-list button small:last-child{font-variant-numeric:tabular-nums}
 .blank-row-button{margin:0 0 8px}
 .details-card .detail-fields{grid-template-columns:1fr}.details-card textarea{min-height:88px}
 .results-column .save-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-top:16px}.results-column .save-strip .button-group{display:contents}.results-column .save-strip #save-recipe{grid-column:1/-1;order:1}.results-column .save-strip p{grid-column:1/-1;order:2;max-width:none;text-align:center}

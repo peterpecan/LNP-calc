@@ -928,6 +928,75 @@ $('#save-settings').addEventListener('click', () => {
   $('#settings-dialog').close();
   toast('Settings saved for this device.');
 });
+// Everything this app keeps lives under one key prefix, so one sweep also covers keys
+// a later version adds. The wipe runs immediately and offers Undo like the other
+// destructive actions, but it is reached through a dialog that spells out what goes:
+// unlike a single recipe, none of it is still on screen to retype.
+function storedKeys() {
+  try {
+    return Object.keys(localStorage).filter(key => key.startsWith('lnp-studio-'));
+  } catch {
+    storageAvailable = false;
+    return [];
+  }
+}
+function eraseEverything() {
+  const before = storedKeys().map(key => [key, localStorage.getItem(key)]);
+  try {
+    for (const [key] of before) localStorage.removeItem(key);
+  } catch {
+    storageAvailable = false;
+    return toast('Browser storage is unavailable, so nothing could be deleted.');
+  }
+  saved = [];
+  session = null;
+  customLipids = [];
+  settings = { minimum: defaultBatch.minimum };
+  recipe = blankRecipe();
+  autoName = null;
+  currentShare = null;
+  renderForm();
+  renderSaved();
+  renderLab();
+  syncStorageCaption();
+  // Restoring the keys rebuilds every screen the straightforward way.
+  toast('Everything saved in this browser was deleted.', () => {
+    try {
+      for (const [key, value] of before) localStorage.setItem(key, value);
+    } catch {
+      return toast('Browser storage is unavailable, so nothing could be restored.');
+    }
+    location.reload();
+  });
+}
+function openEraseDialog() {
+  closeNav();
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const held = [
+    saved.length ? plural(saved.length, 'saved recipe') : '',
+    session ? 'the lab session' : '',
+    customLipids.length ? plural(customLipids.length, 'custom lipid') : '',
+  ].filter(Boolean);
+  const listed = held.length
+    ? held.length > 1
+      ? `${held.slice(0, -1).join(', ')} and ${held.at(-1)}`
+      : held[0]
+    : 'only the current draft and your preferences';
+  $('#erase-summary').textContent =
+    `This browser holds ${listed}. Deleting cannot be undone once you leave or reload the page.`;
+  $('#erase-dialog').showModal();
+  // The safe answer takes focus, so Enter on an open dialog never wipes the browser.
+  $('#keep-data').focus();
+}
+$('#erase-data').addEventListener('click', () => {
+  $('#settings-dialog').close();
+  openEraseDialog();
+});
+$('#erase-all-saved').addEventListener('click', openEraseDialog);
+$('#confirm-erase').addEventListener('click', () => {
+  $('#erase-dialog').close();
+  eraseEverything();
+});
 $('#settings-dialog').addEventListener('keydown', event => {
   if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
     event.preventDefault();

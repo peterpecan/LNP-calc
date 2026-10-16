@@ -28,6 +28,8 @@ Molecular weights remain editable for the exact product or lot. Each built-in en
 4. **Save prepared record** adds a new independent record containing both the original plan and actual values. Later edits do not modify saved records.
 5. Export Excel, CSV, or JSON. Excel includes numeric inputs, cached full-precision results, formulas for recalculation in Excel, an original-plan tab, and a QR transfer sheet when a website address is set and the recipe fits a QR. CSV also includes the original plan for active sessions. JSON exports preserve prepared sessions and can be imported on another device.
 
+**Delete everything** (Settings, and at the foot of Saved recipes) clears this browser's storage: saved recipes, the lab session, custom lipids, device preferences and the current draft. It names what it will remove first and offers **Undo** until the page is reloaded; other devices are unaffected.
+
 Transfers are snapshots and do not synchronize devices. A browser-local working session resumes after reload. Existing v1 recipe backups remain supported. Importing a prepared record retains both versions.
 
 ## Offline and hosting

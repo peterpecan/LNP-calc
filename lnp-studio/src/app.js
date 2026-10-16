@@ -590,7 +590,7 @@ $('#template-list').insertAdjacentHTML(
   recipeTemplates
     .map(
       t =>
-        `<button data-template="${t.id}">${escape(recipeShorthand(templateLipids(t)))}<small>${escape(t.ratio)}</small></button>`,
+        `<button data-template="${t.id}"><strong>${escape(t.label)}</strong><small>${escape(recipeShorthand(templateLipids(t)))}</small><small>${escape(t.ratio)}</small></button>`,
     )
     .join(''),
 );

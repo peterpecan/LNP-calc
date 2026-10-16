@@ -285,7 +285,7 @@ export const lipidLibrary = [
 export const recipeTemplates = [
   {
     id: 'mc3',
-    label: 'MC3',
+    label: 'MC3 standard',
     ratio: '50 : 10 : 38 : 2',
     lipids: [
       ['mc3', 50],
@@ -308,7 +308,7 @@ export const recipeTemplates = [
   },
   {
     id: 'sm102',
-    label: 'SM-102',
+    label: 'SM-102 standard',
     ratio: '50 : 10 : 38.5 : 1.5',
     lipids: [
       ['sm102', 50],
@@ -319,7 +319,7 @@ export const recipeTemplates = [
   },
   {
     id: 'alc0315',
-    label: 'ALC-0315',
+    label: 'ALC-0315 standard',
     ratio: '46.3 : 9.4 : 42.7 : 1.6',
     lipids: [
       ['alc0315', 46.3],

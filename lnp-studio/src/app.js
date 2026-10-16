@@ -25,6 +25,7 @@ import {
   searchLipids,
   selectLibraryLipid,
   slotRoles,
+  templateLabel,
   templateLipids,
 } from './lipid-library.js';
 import {
@@ -162,7 +163,10 @@ function localDate(d = new Date()) {
     .map(n => String(n).padStart(2, '0'))
     .join('-');
 }
-const autoRecipeName = r => `${localDate()} ${recipeShorthand(r.lipids)}`.trim().slice(0, 200);
+// Named after the formulation when the composition is still one of the templates,
+// otherwise after its components: "2026-10-16 SORT spleen (30% 18PA)".
+const autoRecipeName = r =>
+  `${localDate()} ${templateLabel(r.lipids) || recipeShorthand(r.lipids)}`.trim().slice(0, 200);
 // The automatic name the recipe currently carries; null once the user has typed their own.
 let autoName = null;
 function equivalentText(l) {

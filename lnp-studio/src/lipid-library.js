@@ -377,6 +377,23 @@ export const recipeTemplates = [
     ],
   },
 ];
+// Which lipids at which molar parts, ignoring row order, stock concentrations and MW edits:
+// filling in a stock does not change which formulation a composition is.
+const compositionKey = lipids =>
+  lipids
+    .map(l => {
+      const name = String(l.name || '').trim();
+      return `${l.reference?.id || name.toLowerCase()}:${Number(l.ratio) || 0}`;
+    })
+    .sort()
+    .join('|');
+// The template a composition still matches exactly, for naming a recipe after its formulation.
+// A changed lipid or molar part drops the match, since the label names those parts.
+export function templateLabel(lipids) {
+  if (!lipids.some(l => String(l.name || '').trim() && Number(l.ratio) > 0)) return '';
+  const key = compositionKey(lipids);
+  return recipeTemplates.find(t => compositionKey(templateLipids(t)) === key)?.label || '';
+}
 export const slotRoles = ['Ionizable', 'Helper', 'Sterol', 'PEG'];
 // One empty row per lipid type; the role picks which library entries the name field suggests.
 export function blankSlots() {

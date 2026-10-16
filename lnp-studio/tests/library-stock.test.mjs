@@ -4,10 +4,14 @@ import ExcelJS from 'exceljs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
 import {
+  blankSlots,
   lipidLibrary,
   recipeShorthand,
+  recipeTemplates,
   searchLipids,
   selectLibraryLipid,
+  templateLabel,
+  templateLipids,
 } from '../src/lipid-library.js';
 import {
   stockFromMass,
@@ -402,4 +406,18 @@ test('recipe shorthand lists lipids in role order with short library names', () 
     ]),
     'MC3/Chol',
   );
+});
+
+test('a composition keeps its template name until a lipid or molar part changes', () => {
+  for (const template of recipeTemplates)
+    assert.equal(templateLabel(templateLipids(template)), template.label);
+  const spleen = recipeTemplates.find(t => t.id === 'sort-spleen');
+  const withStocks = templateLipids(spleen).map(l => ({ ...l, stock: '10', mw: 1 }));
+  assert.equal(templateLabel(withStocks), spleen.label, 'stock and MW edits are not the recipe');
+  const reordered = [...templateLipids(spleen)].reverse();
+  assert.equal(templateLabel(reordered), spleen.label);
+  const retuned = templateLipids(spleen).map((l, i) => (i ? l : { ...l, ratio: 20 }));
+  assert.equal(templateLabel(retuned), '');
+  assert.equal(templateLabel(templateLipids(spleen).slice(1)), '');
+  assert.equal(templateLabel(blankSlots()), '');
 });

@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { inflateRawSync } from 'node:zlib';
-import { lipidLibrary, searchLipids, selectLibraryLipid } from '../src/lipid-library.js';
+import {
+  lipidLibrary,
+  recipeShorthand,
+  searchLipids,
+  selectLibraryLipid,
+} from '../src/lipid-library.js';
 import {
   stockFromMass,
   applyStockPreparation,
@@ -372,4 +377,29 @@ test('Excel and CSV retain preparation inputs and live Excel formulas', async ()
   assert.ok(csv.includes('100'));
   await mkdir('tests/output', { recursive: true });
   await writeFile('tests/output/mass-stock-verification.xlsx', bytes);
+});
+test('recipe shorthand lists lipids in role order with short library names', () => {
+  const pick = (id, ratio) => ({
+    ...selectLibraryLipid(
+      { ratio },
+      lipidLibrary.find(l => l.id === id),
+    ),
+  });
+  const lipids = [
+    pick('mc3', 50),
+    pick('dspc', 10),
+    pick('dmg-peg2000', 1.5),
+    pick('cholesterol', 38.5),
+    pick('dspe-peg2000-mal-nh4', 0.05),
+    { name: 'My dye (lot 4)', role: 'Custom', ratio: 0.01, stock: '', unit: 'mM', mw: '' },
+    { name: 'Unused', role: 'Custom', ratio: 0, stock: '', unit: 'mM', mw: '' },
+  ];
+  assert.equal(recipeShorthand(lipids), 'MC3/DSPC/Chol/DMG-PEG/DSPE-PEG-MAL/My-dye');
+  assert.equal(
+    recipeShorthand([
+      { name: 'Cholesterol', role: 'Sterol', ratio: 38 },
+      { name: 'MC3', role: 'Ionizable', ratio: 50 },
+    ]),
+    'MC3/Chol',
+  );
 });

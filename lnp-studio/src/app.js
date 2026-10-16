@@ -17,7 +17,12 @@ import {
   isLoopback,
 } from './transfer.js';
 import { buildWorkbook } from './excel.js';
-import { lipidLibrary, searchLipids, selectLibraryLipid } from './lipid-library.js';
+import {
+  lipidLibrary,
+  recipeShorthand,
+  searchLipids,
+  selectLibraryLipid,
+} from './lipid-library.js';
 import {
   stockFromMass,
   applyStockPreparation,
@@ -118,11 +123,17 @@ function referenceHTML(l) {
     source = safeSource(r.source);
   return `${overridden ? '<strong>MW overridden</strong>' : r.average ? '<strong>Average MW</strong>' : '<strong>Library MW</strong>'} · ${source ? `<a href="${escape(source)}" target="_blank" rel="noopener noreferrer">${escape(r.supplier)} ${escape(r.product)}</a>` : escape(r.supplier)}<span class="ref-form">${escape(r.form || '')}${overridden ? ' · Reference ' + escape(r.mw) + ' g/mol' : ''}</span>`;
 }
+const mwOverridden = l =>
+  Boolean(l.reference) && l.mw !== '' && Math.abs(Number(l.mw) - l.reference.mw) > 1e-8;
+// Library MWs show as text until the user asks to edit one; this holds the unlocked rows.
+const mwUnlocked = new WeakSet();
+const mwLocked = l =>
+  Boolean(l.reference) && Number(l.mw) > 0 && !mwOverridden(l) && !mwUnlocked.has(l);
 // One-line source hint under the calculator's MW field; the full reference is in the tooltip.
-function referenceShortHTML(l) {
+function referenceShortHTML(l, i) {
   if (!l.reference) return '';
   const r = l.reference,
-    overridden = l.mw !== '' && Math.abs(Number(l.mw) - r.mw) > 1e-8,
+    overridden = mwOverridden(l),
     source = safeSource(r.source),
     tip = [
       overridden ? 'MW overridden' : r.average ? 'Average MW' : 'Library MW',
@@ -135,10 +146,21 @@ function referenceShortHTML(l) {
     label = overridden
       ? `<strong>Library ${escape(r.mw)}</strong>`
       : `${r.average ? 'Avg. · ' : ''}${escape(String(r.supplier).split(' ')[0])} ${escape(r.product)}`;
-  return source
+  const ref = source
     ? `<a href="${escape(source)}" target="_blank" rel="noopener noreferrer" title="${escape(tip)}">${label}</a>`
     : `<span title="${escape(tip)}">${label}</span>`;
+  return overridden
+    ? `${ref} · <button class="mw-reset" data-mw-reset="${i}" aria-label="Reset lipid ${i + 1} to the library molecular weight">reset</button>`
+    : ref;
 }
+function localDate(d = new Date()) {
+  return [d.getFullYear(), d.getMonth() + 1, d.getDate()]
+    .map(n => String(n).padStart(2, '0'))
+    .join('-');
+}
+const autoRecipeName = r => `${localDate()} ${recipeShorthand(r.lipids)}`.trim().slice(0, 200);
+// The automatic name the recipe currently carries; null once the user has typed their own.
+let autoName = null;
 function equivalentText(l) {
   try {
     const value =
@@ -266,7 +288,7 @@ function currentWorkEntry(incoming = null) {
           updated,
         };
   if (
-    comparable(recipe) === comparable(sourceRecipe) ||
+    comparable({ ...recipe, name: '' }) === comparable({ ...sourceRecipe, name: '' }) ||
     saved.some(s => !s.session && comparable(s.recipe) === comparable(recipe))
   )
     return null;
@@ -341,18 +363,26 @@ function syncStorageCaption() {
 }
 function renderForm() {
   applySettings();
+  autoName = recipe.name === autoRecipeName(recipe) ? recipe.name : null;
   document
     .querySelectorAll('[data-field]')
     .forEach(el => (el.value = recipe[el.dataset.field] ?? ''));
   $('#lipid-rows').innerHTML = recipe.lipids
     .map(
       (l, i) =>
-        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false" placeholder="Search library or type a name"></div></td><td><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><div class="cell-hint"><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></div></td><td><input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol"><div class="cell-hint mw-source" id="mw-reference-${i}"></div></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
+        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false" placeholder="Search library or type a name"></div></td><td><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><div class="cell-hint"><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></div></td><td>${mwLocked(l) ? `<div class="mw-fixed"><span>${escape(l.mw)}</span><button class="mw-edit" data-mw-edit="${i}" aria-label="Edit lipid ${i + 1} molecular weight">Edit</button></div>` : `<input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol">`}<div class="cell-hint mw-source" id="mw-reference-${i}"></div></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
     )
     .join('');
   update();
 }
 function update() {
+  const auto = autoRecipeName(recipe),
+    nameField = $('#recipe-name');
+  if (!recipe.name.trim() || recipe.name === autoName) {
+    recipe.name = autoName = auto;
+    if (document.activeElement !== nameField) nameField.value = auto;
+  }
+  nameField.placeholder = auto;
   result = calculate(recipe);
   const valid = !result.errors.length;
   recipe.lipids.forEach((l, i) => {
@@ -362,7 +392,7 @@ function update() {
       prep.textContent = prepText(l);
       prep.hidden = !l.stockPrep;
     }
-    if ($(`#mw-reference-${i}`)) $(`#mw-reference-${i}`).innerHTML = referenceShortHTML(l);
+    if ($(`#mw-reference-${i}`)) $(`#mw-reference-${i}`).innerHTML = referenceShortHTML(l, i);
   });
   const set = (id, value) => ($(id).textContent = value);
   set(
@@ -479,6 +509,24 @@ document.addEventListener('change', event => {
   }
 });
 $('#lipid-rows').addEventListener('click', event => {
+  const edit = event.target.closest('[data-mw-edit]'),
+    reset = event.target.closest('[data-mw-reset]');
+  if (edit) {
+    const i = Number(edit.dataset.mwEdit);
+    mwUnlocked.add(recipe.lipids[i]);
+    renderForm();
+    const input = $(`#lipid-rows tr[data-index="${i}"] [data-lipid="mw"]`);
+    input.focus();
+    input.select();
+    return;
+  }
+  if (reset) {
+    const i = Number(reset.dataset.mwReset);
+    editOffice();
+    recipe.lipids[i] = updateStockInput(recipe.lipids[i], 'mw', recipe.lipids[i].reference.mw);
+    renderForm();
+    return;
+  }
   const button = event.target.closest('[data-remove]');
   if (!button || recipe.lipids.length <= 1) return;
   editOffice();
@@ -1538,3 +1586,6 @@ document.querySelectorAll('[data-section]').forEach(button =>
     section.focus({ preventScroll: true });
   }),
 );
+$('#recipe-name').addEventListener('focusout', event => {
+  if (!event.target.value.trim()) event.target.value = recipe.name;
+});

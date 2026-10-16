@@ -1,7 +1,7 @@
 import { validStockMetadata, stockProvenanceWarning } from './stocks.js';
 /* LOCAL_WORKSHEET_START */
 export const sourceRecipe = {
-  name: 'MC3 · PEG-MAL',
+  name: '',
   volume: 2500,
   concentration: 12.5,
   batches: 1,

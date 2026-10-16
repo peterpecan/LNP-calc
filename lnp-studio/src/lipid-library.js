@@ -184,6 +184,40 @@ export const lipidLibrary = [
     source: 'https://www.caymanchem.com/product/34336/alc-0159',
   },
 ];
+// Short names for recipe titles; entries not listed use their name as is.
+const shortNames = {
+  mc3: 'MC3',
+  cholesterol: 'Chol',
+  'dotap-cl': 'DOTAP',
+  'dmg-peg2000': 'DMG-PEG',
+  'dsg-peg2000': 'DSG-PEG',
+  'dspe-mpeg2000-nh4': 'DSPE-PEG',
+  'dspe-peg2000-mal-nh4': 'DSPE-PEG-MAL',
+  'dspe-peg2000-amine-nh4': 'DSPE-PEG-NH2',
+};
+const roleRank = { Ionizable: 0, Cationic: 0, Helper: 1, Phospholipid: 1, Sterol: 2, PEG: 3 };
+// "MC3/DSPC/Chol/DMG-PEG": lipids in conventional role order, recipe order within a role.
+export function recipeShorthand(lipids) {
+  const rank = l => roleRank[String(l.role).replace(/ lipid$/, '')] ?? 4;
+  const short = l => {
+    const name = String(l.name || '').trim(),
+      entry =
+        lipidLibrary.find(e => e.id === l.reference?.id) ||
+        lipidLibrary.find(e => e.name.toLowerCase() === name.toLowerCase());
+    if (entry) return shortNames[entry.id] || entry.name;
+    return name
+      .replace(/\s*\([^)]*\)/g, '')
+      .replace(/(PEG)\s*\d+/i, '$1')
+      .trim()
+      .replace(/\s+/g, '-');
+  };
+  return lipids
+    .map((l, i) => ({ l, i }))
+    .filter(({ l }) => String(l.name || '').trim() && Number(l.ratio) > 0)
+    .sort((a, b) => rank(a.l) - rank(b.l) || a.i - b.i)
+    .map(({ l }) => short(l))
+    .join('/');
+}
 export function searchLipids(query = '', category = 'All', custom = []) {
   const normalize = value =>
     String(value)

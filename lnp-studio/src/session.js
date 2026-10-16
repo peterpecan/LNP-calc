@@ -75,8 +75,8 @@ export function updateStock(session, index, field, value) {
   const s = copy(session);
   s.working.lipids[index] = updateStockInput(s.working.lipids[index], field, value);
   s.preparedAt = null;
-  // Any aliquot can change, including ethanol; recheck the complete sheet.
-  s.checked = [];
+  // Only this lipid's aliquot and the ethanol top-up (index lipids.length) depend on its stock.
+  s.checked = s.checked.filter(i => i !== index && i !== s.working.lipids.length);
   return s;
 }
 export function preparedRecord(session, now = new Date().toISOString()) {

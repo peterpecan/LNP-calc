@@ -26,7 +26,7 @@ import { buildWorkbook } from '../src/excel.js';
 const fixture = () => structuredClone(fixtureRecipe);
 test('lab stock edits keep composition, amount and phase targets and preserve original inputs', () => {
   const s = createSession(fixture());
-  s.checked = [0, 1];
+  s.checked = [0, 1, 2, 5]; // 5 = ethanol top-up
   s.preparedAt = '2026-10-15T10:00:00.000Z';
   const edited = updateStock(s, 0, 'stock', 70),
     plan = calculate(s.plan),
@@ -37,7 +37,10 @@ test('lab stock edits keep composition, amount and phase targets and preserve or
   assert.equal(actual.totalNmol, plan.totalNmol);
   assert.equal(actual.totalVolume, plan.totalVolume);
   assert.ok(Math.abs(actual.rows[0].volume - 5000 / 70) < 1e-10);
-  assert.deepEqual(edited.checked, []);
+  // Only the edited lipid and ethanol change, so only their checks clear.
+  assert.deepEqual(edited.checked, [1, 2]);
+  [1, 2, 3, 4].forEach(i => assert.equal(actual.rows[i].volume, plan.rows[i].volume));
+  assert.notEqual(actual.ethanol, plan.ethanol);
   assert.equal(edited.preparedAt, null);
   assert.equal(sameTargets(edited.plan, edited.working), true);
 });

@@ -27,7 +27,7 @@ dialog{max-width:560px;width:calc(100% - 32px);max-height:calc(100dvh - 32px);ov
 .save-strip{flex-wrap:wrap}
 .share-address{margin-top:12px}.share-address summary{padding:4px 0;font-size:13px;color:var(--muted);cursor:pointer}.share-address[open] summary{margin-bottom:8px}
 #lab-page .page-heading{align-items:center}
-.input-table th:nth-child(1){width:27%}.input-table th:nth-child(2){width:13%}.input-table th:nth-child(3){width:28%}.input-table th:nth-child(4){width:26%}.input-table th:last-child{width:6%}
+.input-table th:nth-child(1){width:33%}.input-table th:nth-child(2){width:12%}.input-table th:nth-child(3){width:30%}.input-table th:nth-child(4){width:25%}.input-table th:last-child{width:38px}.input-table td:last-child{padding-inline:0 6px;text-align:center}
 @media(max-width:600px){.lab-stock .row-issue{padding-left:16px}.save-strip p{max-width:none;flex-basis:100%}}
 @media print{.menu,.row-actions,.lipid-suggest{display:none!important}}
 .settings-button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;padding:0;border:1px solid transparent;border-radius:var(--radius-control);background:transparent;color:var(--muted);cursor:pointer}

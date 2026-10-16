@@ -237,7 +237,7 @@ function saveSession() {
 }
 function invalidateShare() {
   currentShare = null;
-  $('#print-transfer').dataset.ready = 'false';
+  $('#print-sheet').dataset.ready = 'false';
 }
 function editOffice() {
   session = null;
@@ -490,7 +490,6 @@ function update() {
     '#save-recipe',
     '#start-lab',
     '#mobile-start-lab',
-    '#share-phone',
     '#send-phone',
     '#calculator-page .menu-button:not(.template-button)',
   ].forEach(id => ($(id).disabled = !valid));
@@ -1218,7 +1217,6 @@ async function generateQR() {
     btn.textContent = 'Generate QR';
   }
 }
-$('#share-phone').addEventListener('click', openShare);
 $('#send-phone').addEventListener('click', openShare);
 $('#lab-share').addEventListener('click', openShare);
 $('#generate-qr').addEventListener('click', generateQR);
@@ -1329,33 +1327,83 @@ async function exportExcel() {
     btns.forEach(id => ($(id).disabled = Boolean(result.errors.length)));
   }
 }
+// A compact, ink-only sheet sized to cut out and paste into a paper lab notebook. It prints the
+// lab session's bench stocks from the lab view and the calculator recipe everywhere else.
+function printSource() {
+  const lab = document.body.dataset.view === 'lab' && session;
+  return lab
+    ? { r: session.working, s: session, lab: true }
+    : { r: recipe, s: session, lab: false };
+}
+function fillPrintSheet(qr = null) {
+  const { r, s, lab } = printSource(),
+    res = calculate(r);
+  $('#print-sheet').dataset.ready = 'false';
+  if (res.errors.length) return false;
+  const plan = lab ? calculate(s.plan) : null,
+    n = Number(r.batches),
+    box = i => `<span class="ps-box">${lab && s.checked.includes(i) ? '✓' : ''}</span>`,
+    stockText = l =>
+      `${Number(l.stock).toLocaleString('en-US', { maximumFractionDigits: 3 })} ${escape(l.unit)}`;
+  const rows = res.rows
+    .map((row, i) => {
+      if (Number(row.ratio) === 0) return '';
+      const planned = lab ? s.plan.lipids[i] : null,
+        changed =
+          planned && (String(planned.stock) !== String(row.stock) || planned.unit !== row.unit);
+      return `<tr><td>${box(i)}</td><th scope="row">${escape(row.name)}</th><td>${fmt(row.fraction * 100)}</td><td>${stockText(row)}${changed ? `<small>plan ${stockText(planned)}</small>` : ''}</td><td>${fmt(row.nmol / 1000, 3)}</td><td class="ps-vol">${fmt(row.volume)}${changed ? `<small>plan ${fmt(plan.rows[i].volume)}</small>` : ''}</td></tr>`;
+    })
+    .join('');
+  const meta = [
+    s ? `Ref ${escape(s.id.slice(0, 8))}` : '',
+    s ? `Planned ${escape(new Date(s.plannedAt).toLocaleString())}` : escape(localDate()),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const notes = (r.notes || '').trim();
+  $('#print-sheet').innerHTML =
+    `<header class="ps-head"><div><p class="ps-kicker">LNP lipid phase${lab && isAdjusted(s) ? ' · stocks adjusted on bench' : ''}</p><h2>${escape(r.name || 'LNP recipe')}</h2><p class="ps-meta">${meta}</p></div>${qr ? `<figure class="ps-qr"><img src="${qr.png}" alt=""><figcaption>${qr.loopback ? 'Localhost link' : 'Scan to open'}</figcaption></figure>` : ''}</header>` +
+    `<dl class="ps-targets"><div><dt>Prepare</dt><dd>${fmt(res.totalVolume)} µL</dd></div><div><dt>Concentration</dt><dd>${Number(r.concentration)} mM</dd></div><div><dt>Total lipid</dt><dd>${fmt(res.totalNmol / 1000, 3)} µmol</dd></div><div><dt>Scale</dt><dd>${n} × ${Number(r.volume)} µL + ${Number(r.excess)}%</dd></div></dl>` +
+    `<table class="ps-table"><thead><tr><th><span class="sr-only">Done</span></th><th>Lipid</th><th>mol%</th><th>Stock</th><th>µmol</th><th class="ps-vol">Add (µL)</th></tr></thead><tbody>${rows}<tr class="ps-solvent"><td>${box(res.rows.length)}</td><th scope="row" colspan="4">Ethanol top-up</th><td class="ps-vol">${fmt(res.ethanol)}</td></tr></tbody><tfoot><tr><td></td><th scope="row" colspan="4">Total lipid phase</th><td class="ps-vol">${fmt(res.totalVolume)}</td></tr></tfoot></table>` +
+    (res.warnings.length
+      ? `<ul class="ps-warnings">${res.warnings.map(w => `<li>${escape(w)}</li>`).join('')}</ul>`
+      : '') +
+    (notes ? `<p class="ps-notes"><strong>Notes</strong> ${escape(notes)}</p>` : '') +
+    `<div class="ps-fill"><span>Prepared by</span><span>Date</span><span>Stock lots</span></div>` +
+    `<p class="ps-foot">LNP calculator · volumes rounded to 0.01 µL · additive-volume model, ethanol top-up</p>`;
+  $('#print-sheet').dataset.ready = 'true';
+  return true;
+}
 async function printRecipe() {
-  if (result.errors.length) return;
+  const { r } = printSource();
+  if (calculate(r).errors.length) return;
   try {
-    const s = ensureSession();
-    $('#print-session').textContent =
-      `${recipe.name} · Ref ${s.id.slice(0, 8)} · Planned ${new Date(s.plannedAt).toLocaleString()}`;
-    $('#print-qr').hidden = true;
-    $('#print-qr-note').textContent = 'Set the website address in Settings to include a QR.';
+    ensureSession();
+    let qr = null;
     if (shareBase()) {
       try {
-        const share = await makeShare(shareBase());
-        $('#print-qr').src = share.png;
-        await $('#print-qr').decode();
-        $('#print-qr').hidden = false;
-        $('#print-qr-note').textContent = share.loopback
-          ? 'Localhost QR: set the GitHub Pages or LAN address in Settings for use on a phone.'
-          : 'The QR includes the original plan and current stock inputs.';
-      } catch (e) {
-        $('#print-qr-note').textContent = 'QR omitted: ' + e.message;
-      }
+        qr = await makeShare(shareBase());
+      } catch {}
     }
-    $('#print-transfer').dataset.ready = 'true';
+    sheetFromButton = fillPrintSheet(qr);
+    if (qr)
+      await $('#print-sheet img')
+        .decode()
+        .catch(() => {});
     window.print();
   } catch (e) {
     toast(e.message);
   }
 }
+// Browser print (Ctrl+P) gets a fresh sheet too, without waiting for a QR.
+let sheetFromButton = false;
+window.addEventListener('beforeprint', () => {
+  if (!sheetFromButton) fillPrintSheet();
+});
+window.addEventListener('afterprint', () => {
+  sheetFromButton = false;
+  $('#print-sheet').dataset.ready = 'false';
+});
 $('#export-excel').addEventListener('click', exportExcel);
 $('#lab-excel').addEventListener('click', exportExcel);
 $('#lab-csv').addEventListener('click', csvExport);

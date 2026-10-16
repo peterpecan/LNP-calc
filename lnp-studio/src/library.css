@@ -8,3 +8,6 @@
 .mw-fixed{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:36px;padding:0 2px 0 7px;font-size:13px;font-variant-numeric:tabular-nums}.mw-edit,.mw-reset{border:0;background:transparent;padding:0;min-height:0;font-size:12px;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.mw-edit{padding:6px 4px}.mw-edit:hover,.mw-reset:hover{color:var(--accent-hover)}
 @media(max-width:600px){.mw-fixed{min-height:40px;font-size:16px}}
 @media print{.mw-edit,.mw-reset{display:none!important}}
+.heading-tools{display:flex;align-items:baseline;gap:14px}.heading-tools .text-button{margin:0;white-space:nowrap}
+.template-menu .menu-list{left:auto;right:0;min-width:250px}.template-menu .menu-button{margin:0}.template-menu .menu-list button small{display:block;color:var(--muted);font-size:12px}
+.blank-row-button{margin:0 0 8px}

@@ -1,22 +1,14 @@
 import { validStockMetadata, stockProvenanceWarning } from './stocks.js';
-/* LOCAL_WORKSHEET_START */
-export const sourceRecipe = {
+// Batch settings for a new recipe; the lipids come from blankSlots() or a template.
+export const defaultBatch = {
   name: '',
-  volume: 2500,
-  concentration: 12.5,
+  volume: 1000,
+  concentration: 10,
   batches: 1,
   excess: 0,
-  minimum: 2,
+  minimum: 0.5,
   notes: '',
-  lipids: [
-    { name: 'MC3', role: 'Ionizable', ratio: 50, stock: 77.87, unit: 'mM', mw: 642.11 },
-    { name: 'DSPC', role: 'Phospholipid', ratio: 10, stock: 5.45, unit: 'mM', mw: 790.145 },
-    { name: 'Cholesterol', role: 'Sterol', ratio: 38, stock: 10.35, unit: 'mM', mw: 386.65 },
-    { name: 'DMG-PEG 2000', role: 'PEG lipid', ratio: 1.95, stock: 19.93, unit: 'mM', mw: 2509.2 },
-    { name: 'DSPE-PEG-MAL', role: 'Functional lipid', ratio: 0.05, stock: 8.5, unit: 'mM', mw: '' },
-  ],
 };
-/* LOCAL_WORKSHEET_END */
 const number = v =>
   v === '' || v === null || v === undefined || typeof v === 'boolean' ? NaN : Number(v);
 export function calculate(recipe) {
@@ -94,13 +86,6 @@ export function calculate(recipe) {
     warnings.push(
       `Mass unavailable for ${missingMass.join(', ')}. Enter the product-specific molecular weight to include it.`,
     );
-  /* LOCAL_STOCK_NOTE_START */
-  const dspc = rows.find(r => r.name.trim().toLowerCase() === 'dspc');
-  if (dspc && dspc.unit === 'mM' && Math.abs(number(dspc.stock) - 5.45) < 0.00001)
-    warnings.push(
-      'Worksheet DSPC stock retained at 5.45 mM. If your stock is 4 mg/mL DSPC (790.145 g/mol), use 5.062 mM instead. Confirm your product and stock label.',
-    );
-  /* LOCAL_STOCK_NOTE_END */
   return {
     errors: [...new Set(errors)],
     warnings,

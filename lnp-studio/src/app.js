@@ -1,4 +1,4 @@
-import { sourceRecipe, calculate, validateRecipeShape, toCSV } from './calculator.js';
+import { defaultBatch, calculate, validateRecipeShape, toCSV } from './calculator.js';
 import {
   copy,
   makeId,
@@ -18,10 +18,14 @@ import {
 } from './transfer.js';
 import { buildWorkbook } from './excel.js';
 import {
+  blankSlots,
   lipidLibrary,
   recipeShorthand,
+  recipeTemplates,
   searchLipids,
   selectLibraryLipid,
+  slotRoles,
+  templateLipids,
 } from './lipid-library.js';
 import {
   stockFromMass,
@@ -62,7 +66,8 @@ function write(key, value) {
   }
 }
 let draft = read('lnp-studio-draft-v1', null);
-let recipe = validateRecipeShape(draft) ? draft : clone(sourceRecipe);
+const blankRecipe = () => ({ ...clone(defaultBatch), lipids: blankSlots() });
+let recipe = validateRecipeShape(draft) ? draft : blankRecipe();
 let saved = read('lnp-studio-recipes-v1', []);
 saved = Array.isArray(saved)
   ? saved.filter(s => s && validateRecipeShape(s.recipe) && typeof s.id === 'string')
@@ -79,7 +84,7 @@ let result,
 const validMinimum = v => v !== '' && v !== null && Number(v) >= 0 && Number.isFinite(Number(v));
 let settings = read('lnp-studio-settings-v1', null);
 if (!settings || !validMinimum(settings.minimum))
-  settings = { minimum: validMinimum(recipe.minimum) ? Number(recipe.minimum) : 2 };
+  settings = { minimum: defaultBatch.minimum };
 function applySettings() {
   if (String(recipe.minimum) !== String(settings.minimum)) recipe.minimum = settings.minimum;
   if (
@@ -258,6 +263,15 @@ const canonical = v =>
       : x,
   );
 const comparable = r => canonical({ ...r, minimum: null });
+// Untouched template or blank compositions are not worth parking in Saved recipes.
+function isStarter(r) {
+  const starts = [blankSlots(), ...recipeTemplates.map(templateLipids)];
+  return (
+    !String(r.notes || '').trim() &&
+    ['', autoRecipeName(r)].includes(r.name) &&
+    starts.some(lipids => canonical(lipids) === canonical(r.lipids))
+  );
+}
 const comparableSession = s =>
   canonical({
     ...s,
@@ -288,7 +302,7 @@ function currentWorkEntry(incoming = null) {
           updated,
         };
   if (
-    comparable({ ...recipe, name: '' }) === comparable({ ...sourceRecipe, name: '' }) ||
+    isStarter(recipe) ||
     saved.some(s => !s.session && comparable(s.recipe) === comparable(recipe))
   )
     return null;
@@ -370,11 +384,12 @@ function renderForm() {
   $('#lipid-rows').innerHTML = recipe.lipids
     .map(
       (l, i) =>
-        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false" placeholder="Search library or type a name"></div></td><td><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><div class="cell-hint"><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></div></td><td>${mwLocked(l) ? `<div class="mw-fixed"><span>${escape(l.mw)}</span><button class="mw-edit" data-mw-edit="${i}" aria-label="Edit lipid ${i + 1} molecular weight">Edit</button></div>` : `<input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol">`}<div class="cell-hint mw-source" id="mw-reference-${i}"></div></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
+        `<tr data-index="${i}"><td><div class="lipid-name"><span class="lipid-dot" style="background:${colors[i % colors.length]}"></span><input data-lipid="name" value="${escape(l.name)}" title="${escape(l.name)}" aria-label="Lipid ${i + 1} name" maxlength="200" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="lipid-suggest" aria-expanded="false" placeholder="${!l.name && slotRoles.includes(l.role) ? `${l.role} lipid…` : 'Search library or type a name'}"></div></td><td><input data-lipid="ratio" type="number" min="0" step="any" value="${escape(l.ratio)}" aria-label="Lipid ${i + 1} molar parts"></td><td><div class="stock-input"><input data-lipid="stock" type="number" min="0" step="any" value="${escape(l.stock)}" aria-label="Lipid ${i + 1} stock concentration"><select data-lipid="unit" aria-label="Lipid ${i + 1} stock unit">${unitOptions(l.unit)}</select></div><div class="cell-hint"><span id="stock-equivalent-${i}" class="stock-equivalent"></span><button class="row-tool" data-prepare-index="${i}" id="stock-recipe-${i}" hidden></button></div></td><td>${mwLocked(l) ? `<div class="mw-fixed"><span>${escape(l.mw)}</span><button class="mw-edit" data-mw-edit="${i}" aria-label="Edit lipid ${i + 1} molecular weight">Edit</button></div>` : `<input data-lipid="mw" type="number" min="0" step="any" value="${escape(l.mw)}" placeholder="Optional" aria-label="Lipid ${i + 1} molecular weight in g per mol">`}<div class="cell-hint mw-source" id="mw-reference-${i}"></div></td><td><button class="remove-lipid" data-remove="${i}" aria-label="Remove lipid ${i + 1}" ${recipe.lipids.length === 1 ? 'disabled' : ''}>×</button></td></tr><tr class="row-issue-row" id="row-issue-${i}" hidden><td colspan="5"><div class="row-issue"></div></td></tr>`,
     )
     .join('');
   update();
 }
+const emptySlot = l => !String(l.name).trim() && l.ratio === '' && l.stock === '';
 function update() {
   const auto = autoRecipeName(recipe),
     nameField = $('#recipe-name');
@@ -408,8 +423,19 @@ function update() {
       ? `${recipe.batches} ${Number(recipe.batches) === 1 ? 'batch' : 'batches'} × ${fmt(Number(recipe.volume), 0)} µL · ${recipe.excess}% overage`
       : 'Correct the inputs to calculate your preparation.',
   );
-  const issues = rowIssues(result, recipe.lipids),
-    notes = valid ? result.warnings.length : 0,
+  const issues = rowIssues(result, recipe.lipids);
+  // Untouched template slots stay quiet; the summary still says the recipe is incomplete.
+  // A stock not entered yet is expected after a template; say so once in the summary instead.
+  issues.rows = issues.rows.map((list, i) =>
+    emptySlot(recipe.lipids[i])
+      ? []
+      : recipe.lipids[i].stock === ''
+        ? list.filter(x => !x.text.includes('stock concentration'))
+        : list,
+  );
+  if (recipe.lipids.some(l => l.stock === '' && !emptySlot(l) && Number(l.ratio) > 0))
+    issues.general.push({ type: 'error', text: 'Enter the stock concentration for each lipid.' });
+  const notes = valid ? result.warnings.length : 0,
     status = statusOf(valid, notes);
   ['#result-status', '#mobile-status'].forEach(id => {
     set(id, status.text);
@@ -470,7 +496,7 @@ function update() {
     '#start-lab',
     '#mobile-start-lab',
     '#share-phone',
-    '#calculator-page .menu-button',
+    '#calculator-page .menu-button:not(.template-button)',
   ].forEach(id => ($(id).disabled = !valid));
   refreshLabResults();
   write('lnp-studio-draft-v1', recipe);
@@ -533,11 +559,13 @@ $('#lipid-rows').addEventListener('click', event => {
   recipe.lipids.splice(Number(button.dataset.remove), 1);
   renderForm();
 });
-$('#add-lipid').addEventListener('click', () => {
+$('#add-lipid').addEventListener('click', () => openLibrary());
+$('#add-blank-lipid').addEventListener('click', () => {
   if (recipe.lipids.length >= 50) return toast('A recipe can contain up to 50 lipids.');
   editOffice();
+  $('#library-dialog').close();
   recipe.lipids.push({
-    name: 'New lipid',
+    name: '',
     role: 'Custom',
     ratio: 0,
     stock: '',
@@ -549,13 +577,40 @@ $('#add-lipid').addEventListener('click', () => {
   input.focus();
   input.select();
 });
-$('#load-source').addEventListener('click', () => {
+$('#template-list').insertAdjacentHTML(
+  'afterbegin',
+  recipeTemplates
+    .map(
+      t =>
+        `<button data-template="${t.id}">${escape(recipeShorthand(templateLipids(t)))}<small>${escape(t.ratio)}</small></button>`,
+    )
+    .join(''),
+);
+// Keeps the batch setup; replaces the name, notes and lipids. Current work is parked first.
+$('#template-list').addEventListener('click', event => {
+  const id = event.target.closest('[data-template]')?.dataset.template;
+  if (!id) return;
   const parked = setAsideCurrentWork();
   if (!parked.ok) return toast(setAsideFailed);
   editOffice();
-  recipe = clone(sourceRecipe);
+  const template = recipeTemplates.find(t => t.id === id);
+  recipe = {
+    ...clone(recipe),
+    name: '',
+    notes: '',
+    lipids: template ? templateLipids(template) : blankSlots(),
+  };
   renderForm();
-  toast(['Starter recipe loaded.', setAsideNote(parked.entry)].filter(Boolean).join(' '));
+  toast(
+    [
+      template
+        ? `${template.label} template loaded. Enter your stock concentrations.`
+        : 'Blank recipe ready. Pick a lipid for each slot.',
+      setAsideNote(parked.entry),
+    ]
+      .filter(Boolean)
+      .join(' '),
+  );
 });
 function download(content, type, name) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -1339,14 +1394,17 @@ async function registerOffline() {
     status.textContent = 'Offline cache unavailable';
   }
 }
-function openLibrary(index = null) {
+function openLibrary(index = null, category = 'All') {
   libraryTarget = index;
   $('#lipid-search').value = '';
-  $('#lipid-category').value = 'All';
+  $('#lipid-category').value = category;
+  $('#add-blank-lipid').hidden = index !== null;
   $('#library-target').textContent =
     index === null
       ? 'Adds a new row with zero molar parts. Enter its ratio and stock concentration.'
-      : `Replacing ${recipe.lipids[index].name}. Molar parts are retained; the old stock concentration is cleared.`;
+      : recipe.lipids[index].name
+        ? `Replacing ${recipe.lipids[index].name}. Molar parts are retained; the old stock concentration is cleared.`
+        : `Choose the lipid for row ${index + 1}.`;
   $('#library-dialog').showModal();
   renderLibrary();
   $('#lipid-search').focus();
@@ -1375,7 +1433,6 @@ function chooseLibraryEntry(entry) {
     `${entry.name} selected. Enter the stock concentration${libraryTarget === null ? ' and molar parts' : ''}.`,
   );
 }
-$('#browse-library').addEventListener('click', () => openLibrary());
 $('#lipid-search').addEventListener('input', renderLibrary);
 $('#lipid-category').addEventListener('change', renderLibrary);
 $('#library-results').addEventListener('click', event => {
@@ -1398,7 +1455,10 @@ function hideSuggest() {
 }
 function showSuggest(input) {
   const q = input.value.trim(),
-    index = Number(input.closest('tr').dataset.index);
+    index = Number(input.closest('tr').dataset.index),
+    row = recipe.lipids[index],
+    // An empty slot lists its lipid type before anything is typed.
+    category = !q && slotRoles.includes(row.role) ? row.role : 'All';
   const key = q.toLowerCase().replace(/[^a-z0-9]/g, ''),
     rank = l => {
       const name = l.name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1410,7 +1470,9 @@ function showSuggest(input) {
         .sort((a, b) => rank(a.l) - rank(b.l) || a.k - b.k)
         .map(x => x.l)
         .slice(0, 6)
-    : [];
+    : category !== 'All'
+      ? searchLipids('', category, customLipids).slice(0, 8)
+      : [];
   if (
     !entries.length ||
     (entries.length === 1 &&
@@ -1418,7 +1480,7 @@ function showSuggest(input) {
       recipe.lipids[index].reference?.id === entries[0].id)
   )
     return hideSuggest();
-  suggest = { input, index, entries, active: -1 };
+  suggest = { input, index, entries, category, active: -1 };
   const list = $('#lipid-suggest'),
     box = input.getBoundingClientRect();
   list.innerHTML =
@@ -1446,9 +1508,9 @@ function moveSuggest(step) {
   items[suggest.active].scrollIntoView({ block: 'nearest' });
 }
 function pickSuggest(key) {
-  const { index, entries } = suggest;
+  const { index, entries, category } = suggest;
   hideSuggest();
-  if (key === 'browse') return openLibrary(index);
+  if (key === 'browse') return openLibrary(index, category);
   const entry = entries[Number(key)];
   if (!entry) return;
   libraryTarget = index;
@@ -1457,6 +1519,10 @@ function pickSuggest(key) {
 }
 $('#lipid-rows').addEventListener('input', event => {
   if (event.target.dataset.lipid === 'name') showSuggest(event.target);
+});
+$('#lipid-rows').addEventListener('focusin', event => {
+  if (event.target.dataset.lipid === 'name' && !event.target.value.trim())
+    showSuggest(event.target);
 });
 $('#lipid-rows').addEventListener('keydown', event => {
   if (event.target.dataset.lipid !== 'name' || $('#lipid-suggest').hidden) return;

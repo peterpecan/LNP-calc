@@ -1,19 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sourceRecipe, calculate, validateRecipeShape, toCSV } from '../src/calculator.js';
-const clone = () => structuredClone(sourceRecipe);
+import { calculate, validateRecipeShape, toCSV } from '../src/calculator.js';
+import { fixtureRecipe } from './fixture.mjs';
+const clone = () => structuredClone(fixtureRecipe);
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} differs from ${b}`);
-test('reproduces all five Excel aliquots and solvent balance', () => {
+test('computes every aliquot and the solvent balance', () => {
   const r = calculate(clone());
   assert.deepEqual(r.errors, []);
-  [
-    200.6549377167073, 573.3944954128441, 1147.342995169082, 30.57576517812343, 1.8382352941176472,
-  ].forEach((v, i) => close(r.rows[i].volume, v));
-  close(r.ethanol, 546.1935712291254);
-  close(r.totalNmol, 31250);
+  [100, 100, 190, 39.8, 0.25].forEach((v, i) => close(r.rows[i].volume, v));
+  close(r.ethanol, 569.95);
+  close(r.totalNmol, 10000);
   close(r.stockVolume + r.ethanol, r.totalVolume);
   assert.equal(r.rows[4].massUg, null);
-  assert.ok(r.warnings.some(w => w.includes('DSPC')));
 });
 test('batch count and overage scale every amount without changing concentration', () => {
   const p = clone();
@@ -22,7 +20,7 @@ test('batch count and overage scale every amount without changing concentration'
   const base = calculate(clone()),
     r = calculate(p);
   assert.deepEqual(r.errors, []);
-  close(r.totalVolume, 8250);
+  close(r.totalVolume, 3300);
   r.rows.forEach((row, i) => close(row.volume, base.rows[i].volume * 3.3));
   close(r.ethanol, base.ethanol * 3.3);
 });
@@ -39,8 +37,8 @@ test('mg/mL stocks use verified MW and conversion is dimensionally correct', () 
   const r = calculate(p);
   assert.deepEqual(r.errors, []);
   close(r.rows[1].stockMM, 4000 / 790.145);
-  close(r.rows[1].volume, 617.30078125);
-  close(r.rows[1].massUg, 2469.203125);
+  close(r.rows[1].volume, 1000 / (4000 / 790.145));
+  close(r.rows[1].massUg, 790.145);
   close(r.rows[1].volume * 4, r.rows[1].massUg);
 });
 test('requires MW only for included mass-based stocks', () => {
@@ -68,7 +66,7 @@ test('invalid, blank, negative, fractional batch and nonfinite inputs block resu
   const p = clone();
   p.lipids[0].stock = '';
   assert.ok(calculate(p).errors.length);
-  p.lipids[0].stock = 77.87;
+  p.lipids[0].stock = 50;
   p.lipids.forEach(l => (l.ratio = 0));
   assert.ok(calculate(p).errors.length);
 });
@@ -91,11 +89,11 @@ test('pipetting warning is configurable and does not round away small amounts', 
   const p = clone();
   let r = calculate(p);
   assert.ok(r.warnings.some(w => w.includes('threshold')));
-  p.minimum = 1;
+  p.minimum = 0.2;
   r = calculate(p);
   assert.ok(!r.warnings.some(w => w.includes('threshold')));
   const csv = toCSV(p, r);
-  assert.ok(csv.includes('1.838235294117647'));
+  assert.ok(csv.includes(String(r.rows[3].volume)));
 });
 test('CSV quotes embedded text and neutralizes spreadsheet formulas', () => {
   const p = clone();

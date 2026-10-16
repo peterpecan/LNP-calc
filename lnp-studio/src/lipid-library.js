@@ -184,6 +184,67 @@ export const lipidLibrary = [
     source: 'https://www.caymanchem.com/product/34336/alc-0159',
   },
 ];
+// Starting compositions offered by "Start from". Ratios are molar parts.
+export const recipeTemplates = [
+  {
+    id: 'mc3',
+    label: 'MC3',
+    ratio: '50 : 10 : 38 : 2',
+    lipids: [
+      ['mc3', 50],
+      ['dspc', 10],
+      ['cholesterol', 38],
+      ['dmg-peg2000', 2],
+    ],
+  },
+  {
+    id: 'mc3-mal',
+    label: 'MC3 + maleimide',
+    ratio: '50 : 10 : 38 : 1.95 : 0.05',
+    lipids: [
+      ['mc3', 50],
+      ['dspc', 10],
+      ['cholesterol', 38],
+      ['dmg-peg2000', 1.95],
+      ['dspe-peg2000-mal-nh4', 0.05],
+    ],
+  },
+  {
+    id: 'sm102',
+    label: 'SM-102',
+    ratio: '50 : 10 : 38.5 : 1.5',
+    lipids: [
+      ['sm102', 50],
+      ['dspc', 10],
+      ['cholesterol', 38.5],
+      ['dmg-peg2000', 1.5],
+    ],
+  },
+  {
+    id: 'alc0315',
+    label: 'ALC-0315',
+    ratio: '46.3 : 9.4 : 42.7 : 1.6',
+    lipids: [
+      ['alc0315', 46.3],
+      ['dspc', 9.4],
+      ['cholesterol', 42.7],
+      ['alc0159-cayman', 1.6],
+    ],
+  },
+];
+export const slotRoles = ['Ionizable', 'Helper', 'Sterol', 'PEG'];
+// One empty row per lipid type; the role picks which library entries the name field suggests.
+export function blankSlots() {
+  return slotRoles.map(role => ({ name: '', role, ratio: '', stock: '', unit: 'mg/mL', mw: '' }));
+}
+export function templateLipids(template) {
+  return template.lipids.map(([id, ratio]) =>
+    selectLibraryLipid(
+      { ratio },
+      lipidLibrary.find(l => l.id === id),
+    ),
+  );
+}
 // Short names for recipe titles; entries not listed use their name as is.
 const shortNames = {
   mc3: 'MC3',

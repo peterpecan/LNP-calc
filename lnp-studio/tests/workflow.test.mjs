@@ -5,7 +5,8 @@ import ExcelJS from 'exceljs';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
-import { sourceRecipe, calculate } from '../src/calculator.js';
+import { calculate } from '../src/calculator.js';
+import { fixtureRecipe } from './fixture.mjs';
 import {
   createSession,
   updateStock,
@@ -22,7 +23,7 @@ import {
   isLoopback,
 } from '../src/transfer.js';
 import { buildWorkbook } from '../src/excel.js';
-const fixture = () => structuredClone(sourceRecipe);
+const fixture = () => structuredClone(fixtureRecipe);
 test('lab stock edits keep composition, amount and phase targets and preserve original inputs', () => {
   const s = createSession(fixture());
   s.checked = [0, 1];
@@ -30,12 +31,12 @@ test('lab stock edits keep composition, amount and phase targets and preserve or
   const edited = updateStock(s, 0, 'stock', 70),
     plan = calculate(s.plan),
     actual = calculate(edited.working);
-  assert.equal(edited.plan.lipids[0].stock, 77.87);
+  assert.equal(edited.plan.lipids[0].stock, 50);
   assert.equal(edited.working.lipids[0].stock, 70);
-  assert.equal(s.working.lipids[0].stock, 77.87);
+  assert.equal(s.working.lipids[0].stock, 50);
   assert.equal(actual.totalNmol, plan.totalNmol);
   assert.equal(actual.totalVolume, plan.totalVolume);
-  assert.ok(Math.abs(actual.rows[0].volume - 15625 / 70) < 1e-10);
+  assert.ok(Math.abs(actual.rows[0].volume - 5000 / 70) < 1e-10);
   assert.deepEqual(edited.checked, []);
   assert.equal(edited.preparedAt, null);
   assert.equal(sameTargets(edited.plan, edited.working), true);
@@ -46,7 +47,7 @@ test('saved preparations are independent immutable snapshots of both versions', 
   s.working.lipids[0].stock = 60;
   s.plan.lipids[0].stock = 99;
   assert.equal(record.recipe.lipids[0].stock, 70);
-  assert.equal(record.session.plan.lipids[0].stock, 77.87);
+  assert.equal(record.session.plan.lipids[0].stock, 50);
   assert.ok(record.session.preparedAt);
   assert.equal(validateSession(record.session), true);
 });
@@ -125,13 +126,13 @@ test('Excel file contains full-precision results, formulas, original plan and em
     ['Lab preparation', 'Original plan', 'Phone transfer'],
   );
   assert.equal(read.getWorksheet('Lab preparation').getCell('C12').value, 70);
-  assert.equal(read.getWorksheet('Original plan').getCell('C12').value, 77.87);
+  assert.equal(read.getWorksheet('Original plan').getCell('C12').value, 50);
   assert.equal(
     read.getWorksheet('Lab preparation').getCell('J12').formula,
     'IF(B12=0,0,IF(AND(ISNUMBER(G12),G12>0),H12/G12,"Check stock"))',
   );
   assert.ok(
-    Math.abs(read.getWorksheet('Lab preparation').getCell('J12').result - 15625 / 70) < 1e-10,
+    Math.abs(read.getWorksheet('Lab preparation').getCell('J12').result - 5000 / 70) < 1e-10,
   );
   assert.equal(read.getWorksheet('Phone transfer').getImages().length, 1);
   assert.equal(read.getWorksheet('Phone transfer').getCell('B21').value.hyperlink, url);
@@ -147,12 +148,7 @@ test('Pages artifact uses generic inputs, relative app paths and its own offline
   const code = await readFile('../github-pages/calculator.js', 'utf8'),
     html = await readFile('../github-pages/index.html', 'utf8'),
     sw = await readFile('../github-pages/sw.js', 'utf8');
-  for (const marker of ['77.87', '240925', 'DSPE-PEG-MAL', '1.95'])
-    assert.ok(
-      !code.includes(marker) && !html.includes(marker),
-      marker + ' must not ship in generic package',
-    );
-  assert.ok(code.includes('Example lipid A'));
+  assert.ok(!code.includes('240925') && !html.includes('240925'));
   assert.ok(!html.includes('id="review-page"'));
   assert.ok(html.includes('href="manifest.webmanifest"'));
   assert.ok(!sw.includes('README.md'));
